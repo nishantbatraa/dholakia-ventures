@@ -108,7 +108,12 @@ FamilyOffice.Settings = (function () {
                 if (Supabase && Supabase.setSyncEnabled) {
                     Supabase.setSyncEnabled(e.target.checked);
                     showNotification('Cloud sync ' + (e.target.checked ? 'enabled' : 'disabled'), 'success');
-                    render(); // Refresh to update button states
+
+                    // Immediately update button states without full re-render
+                    var pushBtn = document.getElementById('push-to-cloud-btn');
+                    var pullBtn = document.getElementById('pull-from-cloud-btn');
+                    if (pushBtn) pushBtn.disabled = !e.target.checked;
+                    if (pullBtn) pullBtn.disabled = !e.target.checked;
                 }
             });
         }

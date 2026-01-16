@@ -10,6 +10,22 @@ FamilyOffice.Components = (function () {
   var icons = Utils.icons;
 
   function renderSidebar(currentPage) {
+    // Check sync status for sidebar indicator
+    var Supabase = FamilyOffice.Supabase;
+    var syncEnabled = Supabase && Supabase.isSyncEnabled && Supabase.isSyncEnabled();
+    var lastSync = Supabase && Supabase.getLastSyncTime ? Supabase.getLastSyncTime() : null;
+    var syncIndicatorHtml = '';
+
+    if (syncEnabled) {
+      var syncTimeDisplay = lastSync ? new Date(lastSync).toLocaleTimeString() : 'Never';
+      syncIndicatorHtml = '\
+        <div id="sync-indicator" class="sidebar-sync-indicator">\
+          <span class="sync-status-icon">☁️</span>\
+          <span class="sync-status-text">Synced</span>\
+          <span class="sync-time">' + syncTimeDisplay + '</span>\
+        </div>';
+    }
+
     return '\
       <div class="sidebar-logo">\
         <a href="#dashboard" data-page="dashboard" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">\
@@ -47,6 +63,7 @@ FamilyOffice.Components = (function () {
         </a>\
       </nav>\
       <div class="sidebar-footer">\
+        ' + syncIndicatorHtml + '\
         <div class="sidebar-nav-item" style="cursor: default; opacity: 0.7;">\
           ' + icons.user + '\
           <span class="sidebar-label">' + (FamilyOffice.Users && FamilyOffice.Users.getCurrentUser() ? FamilyOffice.Users.getCurrentUser().name : 'Admin') + '</span>\

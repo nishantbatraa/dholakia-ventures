@@ -44,14 +44,18 @@ FamilyOffice.Portfolio = (function () {
 
         stages.forEach(function (stage) {
             if (stage === 'Exited') {
-                byStage[stage] = companies.filter(function (c) { return c.status === 'Exited'; });
+                // Show companies in Exited column if status is 'Exited' OR currentStage is 'Exited'
+                byStage[stage] = companies.filter(function (c) {
+                    return c.status === 'Exited' || c.currentStage === 'Exited';
+                });
             } else {
                 byStage[stage] = companies.filter(function (c) {
                     // Use currentStage, fallback to entryStage
                     var companyStage = c.currentStage || c.entryStage;
                     // Treat null/undefined/Active status as Active
                     var companyStatus = c.status || 'Active';
-                    return companyStage === stage && companyStatus === 'Active';
+                    // Don't show in regular columns if status is Exited or currentStage is Exited
+                    return companyStage === stage && companyStatus !== 'Exited' && companyStage !== 'Exited';
                 });
             }
         });
@@ -358,6 +362,16 @@ FamilyOffice.Portfolio = (function () {
                 var currentStageSelect = document.querySelector('select[name="currentStage"]');
                 if (currentStageSelect && !currentStageSelect.value) {
                     currentStageSelect.value = e.target.value;
+                }
+            }
+            // Auto-sync status to 'Exited' when currentStage is 'Exited'
+            if (e.target.name === 'currentStage' && e.target.value === 'Exited') {
+                var statusSelect = document.querySelector('select[name="status"]');
+                if (statusSelect) {
+                    statusSelect.value = 'Exited';
+                    // Also show exit fields
+                    var exitGroup = document.getElementById('exit-fields-group');
+                    if (exitGroup) exitGroup.style.display = 'flex';
                 }
             }
         });

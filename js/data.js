@@ -598,6 +598,49 @@ FamilyOffice.Data = (function () {
     }
   }
 
+  // Auto-sync helper - triggers cloud sync after data changes
+  function triggerAutoSync(operation, dataType) {
+    var Supabase = FamilyOffice.Supabase;
+    if (Supabase && Supabase.isSyncEnabled && Supabase.isSyncEnabled()) {
+      // Update sidebar indicator
+      updateSyncIndicator('syncing');
+
+      // Auto-push to cloud
+      Supabase.pushToCloud()
+        .then(function () {
+          updateSyncIndicator('synced');
+          console.log('✅ Auto-synced: ' + operation + ' ' + dataType);
+        })
+        .catch(function (err) {
+          updateSyncIndicator('error');
+          console.error('❌ Auto-sync failed:', err);
+        });
+    }
+  }
+
+  // Update the sidebar sync indicator
+  function updateSyncIndicator(status) {
+    var indicator = document.getElementById('sync-indicator');
+    if (!indicator) return;
+
+    var statusText = indicator.querySelector('.sync-status-text');
+    var statusIcon = indicator.querySelector('.sync-status-icon');
+
+    if (status === 'syncing') {
+      if (statusIcon) statusIcon.textContent = '⟳';
+      if (statusText) statusText.textContent = 'Syncing...';
+      indicator.classList.add('syncing');
+    } else if (status === 'synced') {
+      if (statusIcon) statusIcon.textContent = '☁️';
+      if (statusText) statusText.textContent = 'Synced';
+      indicator.classList.remove('syncing');
+    } else if (status === 'error') {
+      if (statusIcon) statusIcon.textContent = '⚠️';
+      if (statusText) statusText.textContent = 'Sync error';
+      indicator.classList.remove('syncing');
+    }
+  }
+
   function getCompanies() {
     var stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : SAMPLE_COMPANIES;
@@ -620,6 +663,7 @@ FamilyOffice.Data = (function () {
     });
     companies.push(newCompany);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+    triggerAutoSync('added', 'company');
     return newCompany;
   }
 
@@ -634,6 +678,7 @@ FamilyOffice.Data = (function () {
             (companies[i].followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0);
         }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+        triggerAutoSync('updated', 'company');
         return companies[i];
       }
     }
@@ -644,6 +689,7 @@ FamilyOffice.Data = (function () {
     var companies = getCompanies();
     var filtered = companies.filter(function (c) { return c.id !== id; });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    triggerAutoSync('deleted', 'company');
   }
 
   function getPortfolioMetrics() {
@@ -802,6 +848,7 @@ FamilyOffice.Data = (function () {
     });
     founders.push(newFounder);
     localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
+    triggerAutoSync('added', 'founder');
     return newFounder;
   }
 
@@ -812,6 +859,7 @@ FamilyOffice.Data = (function () {
         founders[i] = Object.assign({}, founders[i], updates);
         founders[i].updatedAt = new Date().toISOString();
         localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
+        triggerAutoSync('updated', 'founder');
         return founders[i];
       }
     }
@@ -835,6 +883,7 @@ FamilyOffice.Data = (function () {
     if (needsSave) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
     }
+    triggerAutoSync('deleted', 'founder');
   }
 
   // Get all founders linked to a specific company
