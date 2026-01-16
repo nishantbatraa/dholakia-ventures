@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Family Office Fund Dashboard - Manage your portfolio of investments">
+  <title>Dholakia Ventures</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles/index.css">
+  <link rel="stylesheet" href="styles/components.css">
+</head>
+
+<body>
+  <div id="app">
+    <aside id="sidebar" class="sidebar"></aside>
+    <main id="main-content" class="main-content">
+      <header id="header" class="header"></header>
+      <div id="page-content" class="page-content"></div>
+    </main>
+  </div>
+  <div id="modal-container"></div>
+
+  <!-- Chart.js for rich visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Load all scripts in order -->
+  <script src="js/utils.js?v=7"></script>
+  <script src="js/supabase.js?v=2"></script>
+  <script src="js/data.js?v=8"></script>
+  <script src="js/users.js?v=7"></script>
+  <script src="js/components.js?v=11"></script>
+  <script src="js/dashboard.js?v=8"></script>
+  <script src="js/portfolio.js?v=8"></script>
+  <script src="js/analytics.js?v=7"></script>
+  <script src="js/settings.js?v=8"></script>
+  <script src="js/founders.js?v=7"></script>
+  <script src="js/funds.js?v=1"></script>
+  <script src="js/legal.js?v=4"></script>
+  <script src="js/app.js?v=9"></script>
+</body>
+
+</html>
