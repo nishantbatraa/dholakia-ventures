@@ -362,7 +362,9 @@ FamilyOffice.Legal = (function () {
         var file = fileInput && fileInput.files && fileInput.files[0];
         var statusDiv = document.getElementById('upload-status');
 
-        // If file is selected, upload to Supabase
+        console.log('[Legal] Save doc clicked. Type:', type, 'URL:', url, 'File:', file ? file.name : 'none');
+
+        // If file is selected, try upload to Supabase, fallback to local storage
         if (file) {
           // Check file size (10MB max)
           if (file.size > 10 * 1024 * 1024) {
@@ -382,34 +384,79 @@ FamilyOffice.Legal = (function () {
           var companyId = document.getElementById('legal-company-id').value;
           var roundType = document.getElementById('legal-round-type').value;
 
-          FamilyOffice.Supabase.uploadFile(file, companyId, roundType, function (result) {
-            if (result.success) {
+          // Helper function to save file locally as base64
+          function saveFileLocally() {
+            console.log('[Legal] Falling back to local storage for file:', file.name);
+            statusDiv.textContent = '📁 Saving locally...';
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var dataUrl = e.target.result;
               window.tempLegalDocs = window.tempLegalDocs || [];
               window.tempLegalDocs.push({
                 type: type,
-                url: result.url,
-                fileName: result.fileName,
-                filePath: result.path,
+                url: dataUrl,
+                fileName: file.name,
                 addedAt: new Date().toISOString(),
-                isUploaded: true
+                isLocal: true
               });
+              console.log('[Legal] File saved locally as base64');
               refreshDocsListInModal();
               document.getElementById('add-doc-form').style.display = 'none';
               fileInput.value = '';
               statusDiv.style.display = 'none';
-            } else {
+            };
+            reader.onerror = function () {
               statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
               statusDiv.style.color = '#f87171';
-              statusDiv.textContent = '❌ Upload failed: ' + result.error;
-            }
-          });
+              statusDiv.textContent = '❌ Failed to read file';
+            };
+            reader.readAsDataURL(file);
+          }
+
+          // Try Supabase upload first
+          if (FamilyOffice.Supabase && FamilyOffice.Supabase.isAvailable()) {
+            console.log('[Legal] Attempting Supabase upload...');
+            FamilyOffice.Supabase.uploadFile(file, companyId, roundType, function (result) {
+              if (result.success) {
+                console.log('[Legal] Supabase upload successful:', result.url);
+                window.tempLegalDocs = window.tempLegalDocs || [];
+                window.tempLegalDocs.push({
+                  type: type,
+                  url: result.url,
+                  fileName: result.fileName,
+                  filePath: result.path,
+                  addedAt: new Date().toISOString(),
+                  isUploaded: true
+                });
+                refreshDocsListInModal();
+                document.getElementById('add-doc-form').style.display = 'none';
+                fileInput.value = '';
+                statusDiv.style.display = 'none';
+              } else {
+                console.warn('[Legal] Supabase upload failed:', result.error);
+                // Fallback to local storage
+                saveFileLocally();
+              }
+            });
+          } else {
+            console.log('[Legal] Supabase not available, using local storage');
+            saveFileLocally();
+          }
         } else if (url) {
+          console.log('[Legal] Adding URL document:', url);
           // Just add URL link
           window.tempLegalDocs = window.tempLegalDocs || [];
           window.tempLegalDocs.push({ type: type, url: url, addedAt: new Date().toISOString() });
           refreshDocsListInModal();
           document.getElementById('add-doc-form').style.display = 'none';
           document.getElementById('new-doc-url').value = '';
+        } else {
+          // Neither file nor URL provided
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+          statusDiv.style.color = '#f87171';
+          statusDiv.textContent = 'Please select a file or enter a URL';
         }
       }
 
@@ -429,12 +476,18 @@ FamilyOffice.Legal = (function () {
 
   function refreshDocsListInModal() {
     var docsListHtml = window.tempLegalDocs.map(function (d, i) {
-      var uploadBadge = d.isUploaded ? '<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 9px; margin-left: 4px;">☁️ Uploaded</span>' : '';
+      var storageBadge = '';
+      if (d.isUploaded) {
+        storageBadge = '<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 9px; margin-left: 4px;">☁️ Cloud</span>';
+      } else if (d.isLocal) {
+        storageBadge = '<span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 9px; margin-left: 4px;">💾 Local</span>';
+      }
       var displayName = d.fileName || d.type;
+      var buttonText = d.isLocal ? 'View' : (d.isUploaded ? 'Download' : 'Open');
       return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--color-bg-tertiary); border-radius: 6px; margin-bottom: 4px;">' +
-        '<span>📄 ' + d.type + uploadBadge + (d.fileName ? '<span class="text-xs text-muted" style="margin-left: 6px;">' + d.fileName + '</span>' : '') + '</span>' +
+        '<span>📄 ' + d.type + storageBadge + (d.fileName ? '<span class="text-xs text-muted" style="margin-left: 6px;">' + d.fileName + '</span>' : '') + '</span>' +
         '<div style="display: flex; gap: 8px;">' +
-        '<a href="' + d.url + '" target="_blank" class="btn btn-ghost btn-sm">' + (d.isUploaded ? 'Download' : 'Open') + '</a>' +
+        '<a href="' + d.url + '" target="_blank" class="btn btn-ghost btn-sm">' + buttonText + '</a>' +
         '<button type="button" class="btn btn-ghost btn-sm delete-doc-btn" data-index="' + i + '">🗑️</button>' +
         '</div></div>';
     }).join('') || '<div class="text-sm text-muted">No documents linked</div>';
