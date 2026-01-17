@@ -820,53 +820,58 @@ FamilyOffice.Portfolio = (function () {
         var finalOwnership = dilutedOwnership + newSharesPct;
         ownershipEl.value = finalOwnership.toFixed(3);
 
-        // Show detailed breakdown with formulas
+        // Show clean table breakdown matching the reference format
         var dilutionPct = (roundDilution * 100).toFixed(2);
+        var dilutionMultiplier = (1 - roundDilution).toFixed(4);
+
         var breakdownHtml = '<div style="color: var(--color-text-secondary);">' +
-            '<div style="margin-bottom: 10px; font-weight: 600; font-size: 14px;">📊 Equity Ownership Calculation</div>' +
-            '<div style="margin-left: 12px; line-height: 1.8;">' +
+            '<div style="margin-bottom: 12px; font-weight: 600; font-size: 14px;">📊 Cap Table Calculation</div>' +
+            '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">' +
+            '<tbody>' +
 
-            // Step 1: Post-money
-            '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--color-border);">' +
-            '<div class="text-muted text-xs">Step 1: Post-Money Valuation</div>' +
-            '<div>' + Utils.formatCurrency(preMoney) + ' + ' + Utils.formatCurrency(totalRaised) + ' = <strong>' + Utils.formatCurrency(postMoney) + '</strong></div>' +
-            '</div>' +
+            // Previous Holding
+            '<tr style="border-bottom: 1px solid var(--color-border);">' +
+            '<td style="padding: 8px 0; color: var(--color-text-muted);">Previous Holding</td>' +
+            '<td style="padding: 8px 0; text-align: right; font-weight: 500;">' + previousOwnership.toFixed(2) + '%</td>' +
+            '</tr>' +
 
-            // Step 2: Dilution
-            '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--color-border);">' +
-            '<div class="text-muted text-xs">Step 2: Round Dilution (New Capital ÷ Post-Money)</div>' +
-            '<div>' + Utils.formatCurrency(totalRaised) + ' ÷ ' + Utils.formatCurrency(postMoney) + ' = <span style="color: #ef4444; font-weight: 600;">' + dilutionPct + '%</span></div>' +
-            '</div>' +
+            // New Round Dilution
+            '<tr style="border-bottom: 1px solid var(--color-border);">' +
+            '<td style="padding: 8px 0; color: var(--color-text-muted);">New Round Dilution</td>' +
+            '<td style="padding: 8px 0; text-align: right; font-weight: 500; color: #ef4444;">' + dilutionPct + '%</td>' +
+            '</tr>' +
 
-            // Step 3: Diluted stake
-            '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--color-border);">' +
-            '<div class="text-muted text-xs">Step 3: Diluted Existing Stake (Old × (1 − Dilution))</div>' +
-            '<div>' + previousOwnership.toFixed(3) + '% × (1 − ' + dilutionPct + '%) = <strong>' + dilutedOwnership.toFixed(3) + '%</strong></div>' +
-            '<div class="text-muted text-xs" style="margin-top: 2px;">Previous from: ' + ownershipSource + '</div>' +
-            '</div>';
+            // Diluted Prev Stake
+            '<tr style="border-bottom: 1px solid var(--color-border);">' +
+            '<td style="padding: 8px 0; color: var(--color-text-muted);">Diluted Prev. Stake</td>' +
+            '<td style="padding: 8px 0; text-align: right;">' +
+            '<span style="font-weight: 500;">' + dilutedOwnership.toFixed(2) + '%</span>' +
+            ' <span class="text-xs text-muted">(' + previousOwnership.toFixed(2) + ' × ' + dilutionMultiplier + ')</span>' +
+            '</td>' +
+            '</tr>' +
+
+            // New Stake Bought
+            '<tr style="border-bottom: 1px solid var(--color-border);">' +
+            '<td style="padding: 8px 0; color: var(--color-text-muted);">New Stake Bought</td>' +
+            '<td style="padding: 8px 0; text-align: right;">';
 
         if (didWeInvest && ourInvestment > 0) {
-            // Step 4: New stake
-            breakdownHtml += '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--color-border);">' +
-                '<div class="text-muted text-xs">Step 4: New Stake Purchased (Investment ÷ Post-Money)</div>' +
-                '<div>' + Utils.formatCurrency(ourInvestment) + ' ÷ ' + Utils.formatCurrency(postMoney) + ' = <span style="color: #10b981; font-weight: 600;">+' + newSharesPct.toFixed(3) + '%</span></div>' +
-                '</div>';
+            breakdownHtml += '<span style="font-weight: 500; color: #10b981;">' + newSharesPct.toFixed(2) + '%</span>' +
+                ' <span class="text-xs text-muted">(' + Utils.formatCurrency(ourInvestment) + ' / ' + Utils.formatCurrency(postMoney) + ')</span>';
         } else {
-            breakdownHtml += '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--color-border); color: var(--color-text-muted);">' +
-                'No new investment in this round (pure dilution)' +
-                '</div>';
+            breakdownHtml += '<span style="color: var(--color-text-muted);">0%</span>';
         }
 
-        // Final result
-        breakdownHtml += '<div style="margin-top: 8px; padding: 10px; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius-sm); text-align: center;">' +
-            '<div class="text-xs text-muted">Final Ownership After Round</div>' +
-            '<div style="font-size: 1.25rem; font-weight: 700; color: var(--color-accent-tertiary);">' + finalOwnership.toFixed(3) + '%</div>';
+        breakdownHtml += '</td></tr>' +
 
-        if (didWeInvest && ourInvestment > 0) {
-            breakdownHtml += '<div class="text-xs text-muted" style="margin-top: 4px;">' + dilutedOwnership.toFixed(3) + '% (diluted) + ' + newSharesPct.toFixed(3) + '% (new)</div>';
-        }
+            // Total Current Holding (highlighted)
+            '<tr style="background: rgba(139, 92, 246, 0.1);">' +
+            '<td style="padding: 12px 8px; font-weight: 600;">Total Current Holding</td>' +
+            '<td style="padding: 12px 8px; text-align: right; font-weight: 700; font-size: 1.1rem; color: var(--color-accent-tertiary);">' + finalOwnership.toFixed(2) + '%</td>' +
+            '</tr>' +
 
-        breakdownHtml += '</div></div></div>';
+            '</tbody></table>' +
+            '</div>';
 
         breakdownEl.innerHTML = breakdownHtml;
         breakdownEl.style.display = 'block';
