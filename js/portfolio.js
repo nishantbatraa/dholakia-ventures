@@ -197,6 +197,16 @@ FamilyOffice.Portfolio = (function () {
             addBtn.addEventListener('click', openAddModal);
         }
 
+        // Import CSV button
+        var importBtn = document.getElementById('import-csv-btn');
+        if (importBtn) {
+            importBtn.addEventListener('click', function () {
+                if (FamilyOffice.CSVImport) {
+                    FamilyOffice.CSVImport.openImportModal();
+                }
+            });
+        }
+
         // Modal events
         modalContainer.addEventListener('click', function (e) {
             // Close modal when clicking overlay or close button (use closest for button with icon)

@@ -86,6 +86,10 @@ FamilyOffice.Components = (function () {
         </div>\
         ' + (FamilyOffice.Users ? FamilyOffice.Users.renderUserSwitcher() : '') + '\
         ' + (showAddButton ? '\
+        <button class="btn btn-secondary" id="import-csv-btn">\
+          📥\
+          <span>Import CSV</span>\
+        </button>\
         <button class="btn btn-primary" id="add-company-btn">\
           ' + icons.plus + '\
           <span>Add Company</span>\

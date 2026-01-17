@@ -130,6 +130,83 @@
 }
 
 /* ============================================
+   CSV IMPORT STYLES
+   ============================================ */
+
+.csv-dropzone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--color-bg-tertiary);
+}
+
+.csv-dropzone:hover,
+.csv-dropzone.dragover {
+    border-color: var(--color-accent-tertiary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.csv-dropzone-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.csv-dropzone-text {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.csv-dropzone-subtext {
+    color: var(--color-text-muted);
+    font-size: 14px;
+}
+
+.csv-mapping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.csv-mapping-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.csv-mapping-field {
+    flex: 1;
+    font-weight: 500;
+}
+
+.csv-mapping-field .csv-required {
+    color: var(--color-danger);
+    margin-left: 4px;
+}
+
+.csv-mapping-arrow {
+    color: var(--color-text-muted);
+}
+
+.csv-mapping-select {
+    flex: 1;
+}
+
+.csv-error-row {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.csv-error-row td {
+    color: var(--color-danger);
+}
+
+/* ============================================
    HEADER
    ============================================ */
 
