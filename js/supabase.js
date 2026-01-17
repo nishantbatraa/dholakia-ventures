@@ -18,7 +18,6 @@ FamilyOffice.Supabase = (function () {
     function init() {
         if (window.supabase && window.supabase.createClient) {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log('✅ Supabase client initialized');
             // Check if sync was previously enabled
             syncEnabled = localStorage.getItem('dv_cloud_sync_enabled') === 'true';
             lastSyncTime = localStorage.getItem('dv_last_sync_time');
@@ -378,7 +377,6 @@ FamilyOffice.Supabase = (function () {
     function setSyncEnabled(enabled) {
         syncEnabled = enabled;
         localStorage.setItem('dv_cloud_sync_enabled', enabled ? 'true' : 'false');
-        console.log('Cloud sync ' + (enabled ? 'enabled' : 'disabled'));
     }
 
     function isSyncEnabled() {
@@ -398,8 +396,6 @@ FamilyOffice.Supabase = (function () {
     function pullFromCloud() {
         if (!supabase) init();
         if (!supabase) return Promise.reject('Supabase not initialized');
-
-        console.log('⬇️ Pulling data from cloud...');
 
         return Promise.all([
             getCompaniesFromCloud(),
@@ -422,7 +418,6 @@ FamilyOffice.Supabase = (function () {
             }
 
             updateSyncTime();
-            console.log('✅ Pulled from cloud:', companies.length, 'companies,', founders.length, 'founders,', funds.length, 'funds');
 
             return {
                 success: true,
@@ -437,8 +432,6 @@ FamilyOffice.Supabase = (function () {
     function pushToCloud() {
         if (!supabase) init();
         if (!supabase) return Promise.reject('Supabase not initialized');
-
-        console.log('⬆️ Pushing data to cloud...');
 
         var companies = JSON.parse(localStorage.getItem('family_office_portfolio') || '[]');
         var founders = JSON.parse(localStorage.getItem('family_office_founders') || '[]');
@@ -458,7 +451,6 @@ FamilyOffice.Supabase = (function () {
 
         return Promise.all(promises).then(function () {
             updateSyncTime();
-            console.log('✅ Pushed to cloud:', companies.length, 'companies,', founders.length, 'founders,', funds.length, 'funds');
             return {
                 success: true,
                 companies: companies.length,

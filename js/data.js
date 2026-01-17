@@ -593,7 +593,6 @@ FamilyOffice.Data = (function () {
       });
       if (needsSave) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
-        console.log('✅ Data migration: Fixed companies with missing/old stage values');
       }
     }
   }
@@ -609,7 +608,6 @@ FamilyOffice.Data = (function () {
       Supabase.pushToCloud()
         .then(function () {
           updateSyncIndicator('synced');
-          console.log('✅ Auto-synced: ' + operation + ' ' + dataType);
         })
         .catch(function (err) {
           updateSyncIndicator('error');

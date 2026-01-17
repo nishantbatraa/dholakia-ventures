@@ -69,17 +69,6 @@ FamilyOffice.Portfolio = (function () {
             }
         });
 
-        // DEBUG: Log companies that don't appear in any column
-        var allAssigned = [];
-        stages.forEach(function (s) { allAssigned = allAssigned.concat(byStage[s] || []); });
-        var orphaned = companies.filter(function (c) {
-            return allAssigned.indexOf(c) === -1;
-        });
-        if (orphaned.length > 0) {
-            console.log('⚠️ Companies not in any board column:', orphaned.map(function (c) {
-                return { name: c.name, entryStage: c.entryStage, currentStage: c.currentStage, status: c.status };
-            }));
-        }
 
         return '<div class="board-container">' +
             stages.map(function (stage) {
