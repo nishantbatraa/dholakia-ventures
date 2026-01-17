@@ -197,13 +197,33 @@ FamilyOffice.Portfolio = (function () {
             addBtn.addEventListener('click', openAddModal);
         }
 
-        // Import CSV button
+        // Import CSV dropdown
         var importBtn = document.getElementById('import-csv-btn');
-        if (importBtn) {
-            importBtn.addEventListener('click', function () {
-                if (FamilyOffice.CSVImport) {
-                    FamilyOffice.CSVImport.openImportModal();
-                }
+        var importMenu = document.getElementById('import-dropdown-menu');
+        if (importBtn && importMenu) {
+            importBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                importMenu.classList.toggle('show');
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function () {
+                importMenu.classList.remove('show');
+            });
+        }
+        // Import companies handler
+        var importCompaniesBtn = document.getElementById('import-companies-btn');
+        if (importCompaniesBtn) {
+            importCompaniesBtn.addEventListener('click', function () {
+                if (importMenu) importMenu.classList.remove('show');
+                if (FamilyOffice.CSVImport) FamilyOffice.CSVImport.openImportModal();
+            });
+        }
+        // Import follow-on rounds handler
+        var importFollowonsBtn = document.getElementById('import-followons-btn');
+        if (importFollowonsBtn) {
+            importFollowonsBtn.addEventListener('click', function () {
+                if (importMenu) importMenu.classList.remove('show');
+                if (FamilyOffice.CSVImport) FamilyOffice.CSVImport.openFollowOnImportModal();
             });
         }
 
