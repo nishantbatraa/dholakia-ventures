@@ -322,7 +322,10 @@ FamilyOffice.Components = (function () {
               ' + (f.ownershipAfter !== undefined ? '<span class="text-muted"> • Own: ' + f.ownershipAfter.toFixed(1) + '%</span>' : '') + '\
             </div>\
           </div>\
-          <button type="button" class="btn btn-ghost btn-sm delete-followon-btn" data-index="' + index + '" title="Delete">' + icons.trash + '</button>\
+          <div style="display: flex; gap: 4px;">\
+            <button type="button" class="btn btn-ghost btn-sm edit-followon-btn" data-index="' + index + '" title="Edit">' + icons.edit + '</button>\
+            <button type="button" class="btn btn-ghost btn-sm delete-followon-btn" data-index="' + index + '" title="Delete">' + icons.trash + '</button>\
+          </div>\
         </div>';
     }).join('');
   }

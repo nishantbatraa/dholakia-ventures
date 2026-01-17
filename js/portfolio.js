@@ -579,10 +579,17 @@ FamilyOffice.Portfolio = (function () {
                     document.getElementById('followon-total-raised').value = '';
                     document.getElementById('followon-valuation').value = '';
                     document.getElementById('followon-ownership').value = '';
+                    // Reset edit mode
+                    window.editFollowOnIndex = undefined;
+                    // Reset button text and form title
+                    var saveBtn = document.getElementById('save-followon-btn');
+                    if (saveBtn) saveBtn.textContent = 'Add Round';
+                    var formTitle = addForm.querySelector('h4');
+                    if (formTitle) formTitle.textContent = 'Add Follow-on Round';
                 }
             }
 
-            // Follow-on Rounds - Save new follow-on
+            // Follow-on Rounds - Save new follow-on (or update existing)
             if (e.target.id === 'save-followon-btn') {
                 var date = document.getElementById('followon-date').value;
                 var round = document.getElementById('followon-round').value;
@@ -597,9 +604,7 @@ FamilyOffice.Portfolio = (function () {
                     return;
                 }
 
-                // Add to temp storage (will be saved with the company)
-                if (!window.tempFollowOns) window.tempFollowOns = [];
-                window.tempFollowOns.push({
+                var followOnData = {
                     date: date,
                     round: round,
                     didWeInvest: didWeInvest,
@@ -607,7 +612,19 @@ FamilyOffice.Portfolio = (function () {
                     totalRaised: totalRaised,
                     roundValuation: roundValuation,
                     ownershipAfter: ownershipAfter
-                });
+                };
+
+                // Check if we're editing or adding
+                if (!window.tempFollowOns) window.tempFollowOns = [];
+
+                if (window.editFollowOnIndex !== undefined) {
+                    // Update existing entry
+                    window.tempFollowOns[window.editFollowOnIndex] = followOnData;
+                    window.editFollowOnIndex = undefined; // Clear edit mode
+                } else {
+                    // Add new entry
+                    window.tempFollowOns.push(followOnData);
+                }
 
                 // Update the list display
                 var listEl = document.getElementById('followons-list');
@@ -616,12 +633,51 @@ FamilyOffice.Portfolio = (function () {
                 }
 
                 // Hide and clear the form
-                document.getElementById('add-followon-form').style.display = 'none';
+                var addForm = document.getElementById('add-followon-form');
+                addForm.style.display = 'none';
                 document.getElementById('followon-date').value = '';
                 document.getElementById('followon-our-investment').value = '';
                 document.getElementById('followon-total-raised').value = '';
                 document.getElementById('followon-valuation').value = '';
                 document.getElementById('followon-ownership').value = '';
+
+                // Reset button text and form title
+                var saveBtn = document.getElementById('save-followon-btn');
+                if (saveBtn) saveBtn.textContent = 'Add Round';
+                var formTitle = addForm.querySelector('h4');
+                if (formTitle) formTitle.textContent = 'Add Follow-on Round';
+            }
+
+            // Follow-on Rounds - Edit follow-on
+            if (e.target.closest('.edit-followon-btn')) {
+                var index = parseInt(e.target.closest('.edit-followon-btn').dataset.index);
+                if (window.tempFollowOns && !isNaN(index) && window.tempFollowOns[index]) {
+                    var fo = window.tempFollowOns[index];
+                    // Show the add form and populate with existing data
+                    var addForm = document.getElementById('add-followon-form');
+                    if (addForm) {
+                        addForm.style.display = 'block';
+                        // Populate form fields
+                        document.getElementById('followon-date').value = fo.date || '';
+                        document.getElementById('followon-round').value = fo.round || 'Seed';
+                        document.getElementById('followon-invested').value = fo.didWeInvest !== false ? 'true' : 'false';
+                        document.getElementById('followon-our-investment').value = fo.ourInvestment || fo.amount || '';
+                        document.getElementById('followon-total-raised').value = fo.totalRaised || '';
+                        document.getElementById('followon-valuation').value = fo.roundValuation || '';
+                        document.getElementById('followon-ownership').value = fo.ownershipAfter || '';
+
+                        // Store edit index for save
+                        window.editFollowOnIndex = index;
+
+                        // Update button text
+                        var saveBtn = document.getElementById('save-followon-btn');
+                        if (saveBtn) saveBtn.textContent = 'Update Round';
+
+                        // Update form title
+                        var formTitle = addForm.querySelector('h4');
+                        if (formTitle) formTitle.textContent = 'Edit Follow-on Round';
+                    }
+                }
             }
 
             // Follow-on Rounds - Delete follow-on
@@ -632,6 +688,15 @@ FamilyOffice.Portfolio = (function () {
                     var listEl = document.getElementById('followons-list');
                     if (listEl) {
                         listEl.innerHTML = Components.renderFollowOnsList(window.tempFollowOns);
+                    }
+                    // Clear edit mode if we deleted the item being edited
+                    if (window.editFollowOnIndex === index) {
+                        window.editFollowOnIndex = undefined;
+                        var addForm = document.getElementById('add-followon-form');
+                        if (addForm) addForm.style.display = 'none';
+                    } else if (window.editFollowOnIndex !== undefined && window.editFollowOnIndex > index) {
+                        // Adjust edit index if we deleted an item before it
+                        window.editFollowOnIndex--;
                     }
                 }
             }
