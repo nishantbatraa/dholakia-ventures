@@ -10,7 +10,14 @@ FamilyOffice.Settings = (function () {
     var Utils = FamilyOffice.Utils;
 
     function render() {
-        return Components.renderSettingsPage();
+        var html = Components.renderSettingsPage();
+        // If called as a refresh (not initial render), update the DOM
+        var pageContent = document.getElementById('page-content');
+        if (pageContent && pageContent.querySelector('.settings-container')) {
+            pageContent.innerHTML = html;
+            initEvents(); // Re-attach event handlers
+        }
+        return html;
     }
 
     function initEvents() {
