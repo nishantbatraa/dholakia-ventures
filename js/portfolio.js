@@ -600,8 +600,19 @@ FamilyOffice.Portfolio = (function () {
                     document.getElementById('followon-premoney').value = '';
                     document.getElementById('followon-valuation').value = '';
                     document.getElementById('followon-ownership').value = '';
+                    var manualField = document.getElementById('followon-ownership-manual');
+                    if (manualField) manualField.value = '';
                     var breakdownEl = document.getElementById('ownership-breakdown');
                     if (breakdownEl) breakdownEl.style.display = 'none';
+
+                    // Reset mode to auto
+                    var autoRadio = document.getElementById('ownership-mode-auto');
+                    if (autoRadio) autoRadio.checked = true;
+                    var autoSection = document.getElementById('ownership-auto-section');
+                    var manualSection = document.getElementById('ownership-manual-section');
+                    if (autoSection) autoSection.style.display = 'block';
+                    if (manualSection) manualSection.style.display = 'none';
+
                     // Reset edit mode
                     window.editFollowOnIndex = undefined;
                     // Reset button text and form title
@@ -612,8 +623,37 @@ FamilyOffice.Portfolio = (function () {
                 }
             }
 
-            // Auto-calculate post-money when pre-money or total raised changes
-            // (This is handled in the change event listener below)
+            // Ownership mode toggle
+            if (e.target.name === 'ownership-mode') {
+                var autoSection = document.getElementById('ownership-auto-section');
+                var manualSection = document.getElementById('ownership-manual-section');
+                var autoLabel = document.querySelector('label:has(#ownership-mode-auto)');
+                var manualLabel = document.getElementById('ownership-mode-manual-label');
+
+                if (e.target.value === 'auto') {
+                    autoSection.style.display = 'block';
+                    manualSection.style.display = 'none';
+                    if (autoLabel) {
+                        autoLabel.style.border = '2px solid var(--color-accent-primary)';
+                        autoLabel.style.background = 'rgba(139, 92, 246, 0.1)';
+                    }
+                    if (manualLabel) {
+                        manualLabel.style.border = '2px solid var(--color-border)';
+                        manualLabel.style.background = 'transparent';
+                    }
+                } else {
+                    autoSection.style.display = 'none';
+                    manualSection.style.display = 'block';
+                    if (autoLabel) {
+                        autoLabel.style.border = '2px solid var(--color-border)';
+                        autoLabel.style.background = 'transparent';
+                    }
+                    if (manualLabel) {
+                        manualLabel.style.border = '2px solid var(--color-accent-primary)';
+                        manualLabel.style.background = 'rgba(139, 92, 246, 0.1)';
+                    }
+                }
+            }
 
             // Calculate Ownership button
             if (e.target.id === 'calc-ownership-btn') {
@@ -627,9 +667,19 @@ FamilyOffice.Portfolio = (function () {
                 var didWeInvest = document.getElementById('followon-invested').value === 'true';
                 var ourInvestment = parseFloat(document.getElementById('followon-our-investment').value) || 0;
                 var totalRaised = parseFloat(document.getElementById('followon-total-raised').value) || 0;
-                var preMoneyValuation = parseFloat(document.getElementById('followon-premoney').value) || 0;
+
+                // Check which mode is selected
+                var isAutoMode = document.getElementById('ownership-mode-auto').checked;
+                var preMoneyValuation = 0;
+                var ownershipAfter = 0;
+
+                if (isAutoMode) {
+                    preMoneyValuation = parseFloat(document.getElementById('followon-premoney').value) || 0;
+                    ownershipAfter = parseFloat(document.getElementById('followon-ownership').value) || 0;
+                } else {
+                    ownershipAfter = parseFloat(document.getElementById('followon-ownership-manual').value) || 0;
+                }
                 var roundValuation = parseFloat(document.getElementById('followon-valuation').value) || 0;
-                var ownershipAfter = parseFloat(document.getElementById('followon-ownership').value) || 0;
 
                 if (!date) {
                     alert('Please enter a round date');
@@ -674,8 +724,18 @@ FamilyOffice.Portfolio = (function () {
                 document.getElementById('followon-premoney').value = '';
                 document.getElementById('followon-valuation').value = '';
                 document.getElementById('followon-ownership').value = '';
+                var manualField = document.getElementById('followon-ownership-manual');
+                if (manualField) manualField.value = '';
                 var breakdownEl = document.getElementById('ownership-breakdown');
                 if (breakdownEl) breakdownEl.style.display = 'none';
+
+                // Reset mode to auto
+                var autoRadio = document.getElementById('ownership-mode-auto');
+                if (autoRadio) autoRadio.checked = true;
+                var autoSection = document.getElementById('ownership-auto-section');
+                var manualSection = document.getElementById('ownership-manual-section');
+                if (autoSection) autoSection.style.display = 'block';
+                if (manualSection) manualSection.style.display = 'none';
 
                 // Reset button text and form title
                 var saveBtn = document.getElementById('save-followon-btn');
