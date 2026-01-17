@@ -203,11 +203,92 @@ FamilyOffice.CSVImport = (function () {
     }
 
     function renderUploadStep() {
-        return '<div class="csv-upload-container"><div class="csv-dropzone" id="csv-dropzone"><div class="csv-dropzone-icon">📄</div><div class="csv-dropzone-text">Drag & drop your CSV file here</div><div class="csv-dropzone-subtext">or click to browse</div><input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;"></div><div class="csv-format-hint" style="margin-top: 20px; padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);"><h4 style="margin-bottom: 8px;">📋 Expected CSV Format</h4><p class="text-sm text-muted" style="margin-bottom: 8px;">Required columns:</p><div style="display: flex; flex-wrap: wrap; gap: 8px;"><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Name</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Industry</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">HQ</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Deal Sourcer</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Analyst</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Entry Date</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Entry Stage</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Investment</span></div></div></div>';
+        return '<div class="csv-upload-container">' +
+            '<div class="csv-dropzone" id="csv-dropzone">' +
+            '<div class="csv-dropzone-icon">📄</div>' +
+            '<div class="csv-dropzone-text">Drag & drop your CSV file here</div>' +
+            '<div class="csv-dropzone-subtext">or click to browse</div>' +
+            '<input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;">' +
+            '</div>' +
+            '<div class="csv-format-hint" style="margin-top: 20px; padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">' +
+            '<h4 style="margin: 0;">📋 Expected CSV Format</h4>' +
+            '<button class="btn btn-sm btn-secondary" id="download-company-template">⬇️ Download Template</button>' +
+            '</div>' +
+            '<p class="text-sm text-muted" style="margin-bottom: 8px;"><strong>Required:</strong></p>' +
+            '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Name *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Industry *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">HQ *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Deal Sourcer *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Analyst *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Entry Date *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Entry Stage *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Initial Investment *</span>' +
+            '</div>' +
+            '<p class="text-sm text-muted" style="margin-bottom: 8px;"><strong>Optional:</strong></p>' +
+            '<div style="display: flex; flex-wrap: wrap; gap: 6px;">' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Current Stage</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Latest Valuation</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Ownership %</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Status</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Notes</span>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
     }
 
     function renderFollowOnUploadStep() {
-        return '<div class="csv-upload-container"><div class="csv-dropzone" id="csv-dropzone"><div class="csv-dropzone-icon">📄</div><div class="csv-dropzone-text">Drag & drop your CSV file here</div><div class="csv-dropzone-subtext">or click to browse</div><input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;"></div><div class="csv-format-hint" style="margin-top: 20px; padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);"><h4 style="margin-bottom: 8px;">📋 Follow-on Rounds CSV Format</h4><p class="text-sm text-muted" style="margin-bottom: 8px;">Company must already exist in the system:</p><div style="display: flex; flex-wrap: wrap; gap: 8px;"><span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Company Name *</span><span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Round Stage *</span><span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Round Date *</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Did We Invest</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Our Investment</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Total Raised</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Valuation</span><span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Ownership After</span></div></div></div>';
+        return '<div class="csv-upload-container">' +
+            '<div class="csv-dropzone" id="csv-dropzone">' +
+            '<div class="csv-dropzone-icon">📄</div>' +
+            '<div class="csv-dropzone-text">Drag & drop your CSV file here</div>' +
+            '<div class="csv-dropzone-subtext">or click to browse</div>' +
+            '<input type="file" id="csv-file-input" accept=".csv,.txt" style="display: none;">' +
+            '</div>' +
+            '<div class="csv-format-hint" style="margin-top: 20px; padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">' +
+            '<h4 style="margin: 0;">📋 Follow-on Rounds CSV Format</h4>' +
+            '<button class="btn btn-sm btn-secondary" id="download-followon-template">⬇️ Download Template</button>' +
+            '</div>' +
+            '<p class="text-sm text-muted" style="margin-bottom: 8px;"><strong>Required</strong> (company must already exist):</p>' +
+            '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Company Name *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Round Stage *</span>' +
+            '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">Round Date *</span>' +
+            '</div>' +
+            '<p class="text-sm text-muted" style="margin-bottom: 8px;"><strong>Optional:</strong></p>' +
+            '<div style="display: flex; flex-wrap: wrap; gap: 6px;">' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Did We Invest</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Our Investment</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Total Raised</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Round Valuation</span>' +
+            '<span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">Ownership After</span>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    }
+
+    // Download template functions
+    function downloadCompanyTemplate() {
+        var csv = 'Name,Industry,HQ,Deal Sourcer,Analyst,Entry Date,Entry Stage,Initial Investment,Current Stage,Latest Valuation,Ownership,Status,Notes\n' +
+            'Example Company,FinTech,Bangalore,Rahul Sharma,Priya Patel,2025-01-15,Seed,5000000,Seed,25000000,5%,Active,Initial seed investment';
+        downloadCSV(csv, 'company_import_template.csv');
+    }
+
+    function downloadFollowOnTemplate() {
+        var csv = 'Company Name,Round Stage,Round Date,Did We Invest,Our Investment,Total Raised,Round Valuation,Ownership After\n' +
+            'Example Company,Series A,2025-06-15,Yes,10000000,50000000,100000000,4%';
+        downloadCSV(csv, 'followon_import_template.csv');
+    }
+
+    function downloadCSV(content, filename) {
+        var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
     }
 
     function renderMappingStep(headers) {
@@ -266,12 +347,17 @@ FamilyOffice.CSVImport = (function () {
             var dropzone = document.getElementById('csv-dropzone');
             var fileInput = document.getElementById('csv-file-input');
             if (dropzone && fileInput) {
-                dropzone.onclick = function () { fileInput.click(); };
+                dropzone.onclick = function (e) { if (e.target.tagName !== 'BUTTON') fileInput.click(); };
                 dropzone.ondragover = function (e) { e.preventDefault(); dropzone.classList.add('dragover'); };
                 dropzone.ondragleave = function () { dropzone.classList.remove('dragover'); };
                 dropzone.ondrop = function (e) { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); };
                 fileInput.onchange = function () { if (fileInput.files[0]) handleFile(fileInput.files[0]); };
             }
+            // Download template buttons
+            var downloadCompanyBtn = document.getElementById('download-company-template');
+            var downloadFollowOnBtn = document.getElementById('download-followon-template');
+            if (downloadCompanyBtn) downloadCompanyBtn.onclick = function (e) { e.stopPropagation(); downloadCompanyTemplate(); };
+            if (downloadFollowOnBtn) downloadFollowOnBtn.onclick = function (e) { e.stopPropagation(); downloadFollowOnTemplate(); };
         }
         if (step === 'mapping') {
             var backBtn = document.getElementById('csv-back-btn');
