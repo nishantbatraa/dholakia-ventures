@@ -54,7 +54,10 @@ FamilyOffice.CSVImport = (function () {
     function parseCSV(text) {
         var lines = text.trim().split(/\r?\n/);
         if (lines.length < 2) return { error: 'CSV must have at least a header row and one data row' };
-        var headers = parseCSVLine(lines[0]);
+        var rawHeaders = parseCSVLine(lines[0]);
+        // Filter out empty headers (from trailing commas or empty columns)
+        var headers = rawHeaders.filter(function (h) { return h && h.trim().length > 0; });
+        if (headers.length === 0) return { error: 'No valid column headers found' };
         var rows = [];
         for (var i = 1; i < lines.length; i++) {
             if (lines[i].trim()) {
