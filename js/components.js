@@ -131,7 +131,7 @@ FamilyOffice.Components = (function () {
         </div>\
         <div class="company-card-meta">\
           <span class="company-card-tag">' + company.dealSourcer + '</span>\
-          <span class="company-card-investment">' + Utils.formatCurrency(company.totalInvested) + '</span>\
+          <span class="company-card-investment">' + Utils.formatCurrency(company.totalInvested || company.initialInvestment || 0) + '</span>\
         </div>\
       </div>';
   }
@@ -653,7 +653,7 @@ FamilyOffice.Components = (function () {
       <div class="grid grid-cols-3 gap-4 mt-6">\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Total Invested</div>\
-          <div style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent-tertiary);">' + Utils.formatCurrency(company.totalInvested) + '</div>\
+          <div style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent-tertiary);">' + Utils.formatCurrency(company.totalInvested || company.initialInvestment || 0) + '</div>\
         </div>\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Latest Valuation</div>\
