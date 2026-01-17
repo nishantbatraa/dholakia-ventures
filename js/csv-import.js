@@ -127,23 +127,44 @@ FamilyOffice.CSVImport = (function () {
 
     // Import companies
     function importCompanies(rows) {
+        console.log('[CSV Import] Starting import of', rows.length, 'rows');
         var imported = 0, skipped = 0;
-        rows.forEach(function (row) {
-            if (!row.valid) { skipped++; return; }
+        rows.forEach(function (row, index) {
+            if (!row.valid) {
+                console.log('[CSV Import] Skipping row', index, '- invalid:', row.errors);
+                skipped++;
+                return;
+            }
             var d = row.data;
-            Data.addCompany({
-                name: d.name.trim(), industry: d.industry.trim(), hq: d.hq.trim(),
-                dealSourcer: d.dealSourcer.trim(), analyst: d.analyst.trim(),
-                entryDate: d.entryDate.trim(), entryStage: d.entryStage.trim(),
-                currentStage: d.currentStage ? d.currentStage.trim() : d.entryStage.trim(),
-                initialInvestment: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
-                totalInvested: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
-                latestValuation: d.latestValuation ? parseFloat(d.latestValuation.replace(/[₹$,]/g, '')) : 0,
-                ownership: d.ownership ? parseFloat(d.ownership.replace(/%/g, '')) : 0,
-                status: d.status ? d.status.trim() : 'Active', notes: d.notes || '', followOns: []
-            });
-            imported++;
+            console.log('[CSV Import] Importing company:', d.name);
+            try {
+                var company = {
+                    name: d.name.trim(),
+                    industry: d.industry.trim(),
+                    hq: d.hq.trim(),
+                    dealSourcer: d.dealSourcer.trim(),
+                    analyst: d.analyst.trim(),
+                    entryDate: d.entryDate.trim(),
+                    entryStage: d.entryStage.trim(),
+                    currentStage: d.currentStage ? d.currentStage.trim() : d.entryStage.trim(),
+                    initialInvestment: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
+                    totalInvested: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
+                    latestValuation: d.latestValuation ? parseFloat(d.latestValuation.replace(/[₹$,]/g, '')) : 0,
+                    ownership: d.ownership ? parseFloat(d.ownership.replace(/%/g, '')) : 0,
+                    status: d.status ? d.status.trim() : 'Active',
+                    notes: d.notes || '',
+                    followOns: []
+                };
+                console.log('[CSV Import] Company object:', company);
+                var result = Data.addCompany(company);
+                console.log('[CSV Import] Added company result:', result);
+                imported++;
+            } catch (e) {
+                console.error('[CSV Import] Error adding company:', e);
+                skipped++;
+            }
         });
+        console.log('[CSV Import] Import complete. Imported:', imported, 'Skipped:', skipped);
         return { imported: imported, skipped: skipped };
     }
 
