@@ -582,6 +582,10 @@
     background: var(--color-stage-exited);
 }
 
+.stage-written-off .stage-dot {
+    background: var(--color-stage-written-off);
+}
+
 /* ============================================
    TABLE
    ============================================ */

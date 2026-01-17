@@ -38,8 +38,8 @@ FamilyOffice.Portfolio = (function () {
     }
 
     function renderBoardView(companies) {
-        // Use Data.STAGES plus Exited for the board columns
-        var stages = Data.STAGES.concat(['Exited']);
+        // Use Data.STAGES plus Exited and Written Off for the board columns
+        var stages = Data.STAGES.concat(['Exited', 'Written Off']);
         var byStage = {};
 
         stages.forEach(function (stage) {
@@ -48,14 +48,23 @@ FamilyOffice.Portfolio = (function () {
                 byStage[stage] = companies.filter(function (c) {
                     return c.status === 'Exited' || c.currentStage === 'Exited';
                 });
+            } else if (stage === 'Written Off') {
+                // Show companies in Written Off column if status is 'Written-off' OR currentStage is 'Written Off'
+                byStage[stage] = companies.filter(function (c) {
+                    return c.status === 'Written-off' || c.currentStage === 'Written Off';
+                });
             } else {
                 byStage[stage] = companies.filter(function (c) {
                     // Use currentStage, fallback to entryStage
                     var companyStage = c.currentStage || c.entryStage;
                     // Treat null/undefined/Active status as Active
                     var companyStatus = c.status || 'Active';
-                    // Don't show in regular columns if status is Exited or currentStage is Exited
-                    return companyStage === stage && companyStatus !== 'Exited' && companyStage !== 'Exited';
+                    // Don't show in regular columns if status is Exited/Written-off or currentStage is Exited/Written Off
+                    return companyStage === stage &&
+                        companyStatus !== 'Exited' &&
+                        companyStatus !== 'Written-off' &&
+                        companyStage !== 'Exited' &&
+                        companyStage !== 'Written Off';
                 });
             }
         });
