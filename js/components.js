@@ -523,19 +523,27 @@ FamilyOffice.Components = (function () {
             </div>\
             <div class="form-row">\
               <div class="form-group">\
-                <label class="form-label">Total Round Raised (₹)</label>\
-                <input type="number" class="form-input" id="followon-total-raised" min="0" step="1">\
+                <label class="form-label">Total Round Raised (₹) *</label>\
+                <input type="number" class="form-input" id="followon-total-raised" min="0" step="1" placeholder="Amount raised in this round">\
               </div>\
               <div class="form-group">\
-                <label class="form-label">Post-Round Valuation (₹)</label>\
-                <input type="number" class="form-input" id="followon-valuation" min="0" step="1">\
+                <label class="form-label">Pre-money Valuation (₹) *</label>\
+                <input type="number" class="form-input" id="followon-premoney" min="0" step="1" placeholder="Valuation before this round">\
               </div>\
             </div>\
             <div class="form-row">\
               <div class="form-group">\
-                <label class="form-label">Our Ownership After (%)</label>\
-                <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001">\
+                <label class="form-label">Post-money Valuation (₹)</label>\
+                <input type="number" class="form-input" id="followon-valuation" min="0" step="1" placeholder="Auto-calculated" readonly style="background: var(--color-bg-secondary);">\
               </div>\
+              <div class="form-group">\
+                <label class="form-label">Our Ownership After (%) <button type="button" class="btn-add-new" id="calc-ownership-btn" title="Calculate">🧮 Calculate</button></label>\
+                <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001" placeholder="Click Calculate">\
+              </div>\
+            </div>\
+            <div id="ownership-breakdown" style="display: none; padding: 12px; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 12px; font-size: 13px;">\
+            </div>\
+            <div class="form-row">\
               <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--space-2);">\
                 <button type="button" class="btn btn-primary" id="save-followon-btn">Add Round</button>\
                 <button type="button" class="btn btn-secondary" id="cancel-followon-btn">Cancel</button>\
