@@ -630,33 +630,60 @@ FamilyOffice.Components = (function () {
 
   function renderCompanyDetail(company) {
     var avatarColor = Utils.getAvatarColor(company.name);
+
+    // Calculate dynamic ownership history
+    var ownershipHistory = Utils.calculateOwnershipHistory(company);
+    var displayOwnership = ownershipHistory.currentOwnership || company.ownership || 0;
+
     var followOnsHtml = '';
     if (company.followOns && company.followOns.length > 0) {
-      var followOnItems = company.followOns.map(function (f) {
-        // Support both old format (amount) and new format (ourInvestment, totalRaised, etc.)
-        var investmentAmount = f.ourInvestment || f.amount || 0;
-        var didInvest = f.didWeInvest !== undefined ? f.didWeInvest : true;
+      var followOnItems = ownershipHistory.rounds.map(function (roundData, index) {
+        var f = company.followOns[index] || {};
+        var investmentAmount = roundData.ourInvestment || 0;
+        var didInvest = roundData.didWeInvest;
         var investedBadge = didInvest ?
           '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">✓ Invested</span>' :
           '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">✗ Passed</span>';
 
+        // Build dilution breakdown
+        var dilutionBreakdown = '';
+        if (roundData.dilutionFactor > 0) {
+          var dilutionPct = (roundData.dilutionFactor * 100).toFixed(2);
+          var prevOwn = roundData.previousOwnership.toFixed(2);
+          var dilutedOwn = roundData.dilutedOwnership.toFixed(2);
+
+          dilutionBreakdown = '<div style="font-size: 11px; margin-top: 6px; padding: 6px 8px; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">';
+
+          if (roundData.isPassiveDilution) {
+            // Passive dilution only
+            dilutionBreakdown += '<div style="color: var(--color-text-muted);">📉 Passive Dilution</div>' +
+              '<div>' + prevOwn + '% → <span style="color: #ef4444;">−' + dilutionPct + '%</span> → <strong>' + dilutedOwn + '%</strong></div>';
+          } else {
+            // Dilution + new stake
+            var newStake = roundData.newStakeBought.toFixed(2);
+            var finalOwn = roundData.finalOwnership.toFixed(2);
+            dilutionBreakdown += '<div style="color: var(--color-text-muted);">📊 Ownership Change</div>' +
+              '<div>Diluted: ' + prevOwn + '% × (1−' + dilutionPct + '%) = ' + dilutedOwn + '%</div>' +
+              '<div>+ New stake: <span style="color: #10b981;">+' + newStake + '%</span></div>' +
+              '<div style="font-weight: 600; color: var(--color-accent-tertiary);">= ' + finalOwn + '%</div>';
+          }
+          dilutionBreakdown += '</div>';
+        }
+
         var detailsHtml = '';
-        if (f.totalRaised) {
-          detailsHtml += '<div class="text-xs text-muted">Round: ' + Utils.formatCurrency(f.totalRaised) + '</div>';
+        if (roundData.totalRaised) {
+          detailsHtml += '<div class="text-xs text-muted">Round: ' + Utils.formatCurrency(roundData.totalRaised) + '</div>';
         }
-        if (f.roundValuation) {
-          detailsHtml += '<div class="text-xs text-muted">Valuation: ' + Utils.formatCurrency(f.roundValuation) + '</div>';
-        }
-        if (f.ownershipAfter !== undefined) {
-          detailsHtml += '<div class="text-xs text-muted">Ownership: ' + f.ownershipAfter.toFixed(1) + '%</div>';
+        if (roundData.postMoney) {
+          detailsHtml += '<div class="text-xs text-muted">Post-Money: ' + Utils.formatCurrency(roundData.postMoney) + '</div>';
         }
 
         return '\
           <div class="follow-on-item" style="padding: var(--space-3); margin-bottom: var(--space-2); background: var(--color-bg-tertiary); border-radius: var(--radius-md);">\
             <div class="flex justify-between mb-2">\
               <div>\
-                <span class="badge ' + Utils.getStageBadgeClass(f.round) + '" style="margin-right: 8px;">' + f.round + '</span>\
-                <span class="text-muted text-sm">' + Utils.formatDate(f.date) + '</span>\
+                <span class="badge ' + Utils.getStageBadgeClass(roundData.roundName) + '" style="margin-right: 8px;">' + roundData.roundName + '</span>\
+                <span class="text-muted text-sm">' + Utils.formatDate(roundData.date) + '</span>\
               </div>\
               ' + investedBadge + '\
             </div>\
@@ -664,11 +691,23 @@ FamilyOffice.Components = (function () {
               <div>' + detailsHtml + '</div>\
               ' + (didInvest && investmentAmount > 0 ? '<div style="text-align: right;"><div class="text-xs text-muted">Our Investment</div><span style="color: var(--color-accent-tertiary); font-weight: 600;">' + Utils.formatCurrency(investmentAmount) + '</span></div>' : '') + '\
             </div>\
+            ' + dilutionBreakdown + '\
           </div>';
       }).join('');
+
+      // Add initial ownership info
+      var initialOwnershipHtml = '<div style="padding: var(--space-3); margin-bottom: var(--space-2); background: var(--color-bg-secondary); border-radius: var(--radius-md);">' +
+        '<div class="text-xs text-muted">📍 Initial Entry</div>' +
+        '<div class="flex justify-between items-center mt-1">' +
+        '<span>Entry Ownership</span>' +
+        '<strong style="color: var(--color-accent-tertiary);">' + ownershipHistory.initialOwnership.toFixed(2) + '%</strong>' +
+        '</div>' +
+        '</div>';
+
       followOnsHtml = '\
         <div class="mt-6">\
-          <h4 class="mb-4">Follow-on Rounds</h4>\
+          <h4 class="mb-4">Ownership Journey</h4>\
+          ' + initialOwnershipHtml + '\
           ' + followOnItems + '\
         </div>';
     }
@@ -700,8 +739,9 @@ FamilyOffice.Components = (function () {
           <div style="font-size: 1.25rem; font-weight: 600;">' + Utils.formatCurrency(company.latestValuation) + '</div>\
         </div>\
         <div class="card" style="padding: var(--space-4);">\
-          <div class="text-xs text-muted mb-1">Ownership</div>\
-          <div style="font-size: 1.25rem; font-weight: 600;">' + Utils.formatPercent(company.ownership) + '</div>\
+          <div class="text-xs text-muted mb-1">Current Ownership</div>\
+          <div style="font-size: 1.25rem; font-weight: 600;">' + displayOwnership.toFixed(2) + '%</div>\
+          ' + (company.followOns && company.followOns.length > 0 ? '<div class="text-xs text-muted" style="margin-top: 4px;">After ' + company.followOns.length + ' round(s)</div>' : '') + '\
         </div>\
       </div>\
       <div class="grid grid-cols-2 gap-4 mt-4">\

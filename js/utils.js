@@ -322,6 +322,98 @@ FamilyOffice.Utils = (function () {
         return (xirr * 100).toFixed(1) + '%';
     }
 
+    /**
+     * Calculate ownership history through all funding rounds
+     * Applies dilution sequentially and tracks new acquisitions
+     * 
+     * @param {Object} company - Company object with initial data and followOns array
+     * @returns {Object} {
+     *   initialOwnership: number,
+     *   currentOwnership: number,
+     *   rounds: Array of round breakdown objects
+     * }
+     */
+    function calculateOwnershipHistory(company) {
+        var result = {
+            initialOwnership: 0,
+            currentOwnership: 0,
+            rounds: []
+        };
+
+        // Step 1: Initialize - Calculate initial ownership
+        // Initial ownership = Initial Investment / Initial Post-Money Valuation
+        var initialInvestment = company.initialInvestment || 0;
+        var initialValuation = company.initialValuation || company.entryValuation || 0;
+
+        if (initialValuation > 0 && initialInvestment > 0) {
+            result.initialOwnership = (initialInvestment / initialValuation) * 100;
+        } else if (company.ownership) {
+            // Fallback to stored ownership if no valuation data
+            result.initialOwnership = company.ownership;
+        }
+
+        var currentOwnership = result.initialOwnership;
+
+        // Step 2: Process each follow-on round sequentially
+        var followOns = company.followOns || [];
+
+        // Sort by date to ensure correct order
+        followOns = followOns.slice().sort(function (a, b) {
+            return new Date(a.date) - new Date(b.date);
+        });
+
+        followOns.forEach(function (round, index) {
+            var roundBreakdown = {
+                index: index,
+                date: round.date,
+                roundName: round.round,
+                previousOwnership: currentOwnership,
+                dilutionFactor: 0,
+                dilutedOwnership: currentOwnership,
+                newStakeBought: 0,
+                finalOwnership: currentOwnership,
+                didWeInvest: round.didWeInvest,
+                ourInvestment: round.ourInvestment || 0,
+                totalRaised: round.totalRaised || 0,
+                postMoney: round.roundValuation || 0,
+                isPassiveDilution: true
+            };
+
+            // Calculate dilution if we have the data
+            var totalRaised = round.totalRaised || 0;
+            var postMoney = round.roundValuation || 0;
+
+            if (postMoney > 0 && totalRaised > 0) {
+                // A. Calculate Dilution Factor
+                roundBreakdown.dilutionFactor = totalRaised / postMoney;
+
+                // B. Calculate Diluted Base (Passive Dilution)
+                roundBreakdown.dilutedOwnership = currentOwnership * (1 - roundBreakdown.dilutionFactor);
+
+                // C. Handle Re-investment
+                if (round.didWeInvest && round.ourInvestment > 0) {
+                    roundBreakdown.newStakeBought = (round.ourInvestment / postMoney) * 100;
+                    roundBreakdown.isPassiveDilution = false;
+                }
+
+                // D. Calculate Final Ownership
+                roundBreakdown.finalOwnership = roundBreakdown.dilutedOwnership + roundBreakdown.newStakeBought;
+            } else if (round.ownershipAfter !== undefined && round.ownershipAfter > 0) {
+                // Fallback: Use stored ownership if calculation data is missing
+                roundBreakdown.finalOwnership = round.ownershipAfter;
+                roundBreakdown.dilutedOwnership = round.ownershipAfter; // Approximate
+            }
+
+            // Update current ownership for next round
+            currentOwnership = roundBreakdown.finalOwnership;
+
+            result.rounds.push(roundBreakdown);
+        });
+
+        result.currentOwnership = currentOwnership;
+        return result;
+    }
+
     // Icons
     var icons = {
         dashboard: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>',
@@ -354,6 +446,7 @@ FamilyOffice.Utils = (function () {
         filterCompanies: filterCompanies,
         calculateXIRR: calculateXIRR,
         getPortfolioCashFlows: getPortfolioCashFlows,
+        calculateOwnershipHistory: calculateOwnershipHistory,
         icons: icons,
         getCurrency: getCurrency,
         setCurrency: setCurrency
