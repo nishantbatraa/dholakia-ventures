@@ -492,22 +492,25 @@ FamilyOffice.Components = (function () {
           \
           <!-- Existing Follow-ons List -->\
           <div id="followons-list">' + renderFollowOnsList(company.followOns || []) + '</div>\
-          \
           <!-- Add Follow-on Form (hidden by default) -->\
           <div id="add-followon-form" class="card" style="display: none; padding: var(--space-4); margin-top: var(--space-3); background: var(--color-bg-tertiary);">\
             <h4 style="margin-bottom: var(--space-3);">Add Follow-on Round</h4>\
+            \
+            <!-- Row 1: Basic Round Info -->\
             <div class="form-row">\
               <div class="form-group">\
-                <label class="form-label">Round Date *</label>\
+                <label class="form-label">Round Date <span style="color: #ef4444;">*</span></label>\
                 <input type="date" class="form-input" id="followon-date">\
               </div>\
               <div class="form-group">\
-                <label class="form-label">Round Stage *</label>\
+                <label class="form-label">Round Stage <span style="color: #ef4444;">*</span></label>\
                 <select class="form-select" id="followon-round">\
                   ' + Data.STAGES.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') + '\
                 </select>\
               </div>\
             </div>\
+            \
+            <!-- Row 2: Our Participation -->\
             <div class="form-row">\
               <div class="form-group">\
                 <label class="form-label">Did We Invest?</label>\
@@ -518,13 +521,15 @@ FamilyOffice.Components = (function () {
               </div>\
               <div class="form-group">\
                 <label class="form-label">Our Investment (₹)</label>\
-                <input type="number" class="form-input" id="followon-our-investment" min="0" step="1" placeholder="0 if passed">\
+                <input type="number" class="form-input" id="followon-our-investment" min="0" step="1" placeholder="0 if we passed">\
               </div>\
             </div>\
+            \
+            <!-- Row 3: Round Details -->\
             <div class="form-row">\
               <div class="form-group">\
                 <label class="form-label">Total Round Raised (₹)</label>\
-                <input type="number" class="form-input" id="followon-total-raised" min="0" step="1" placeholder="Amount raised">\
+                <input type="number" class="form-input" id="followon-total-raised" min="0" step="1" placeholder="Total amount raised">\
               </div>\
               <div class="form-group">\
                 <label class="form-label">Post-money Valuation (₹)</label>\
@@ -533,50 +538,57 @@ FamilyOffice.Components = (function () {
             </div>\
             \
             <!-- Ownership Entry Mode Toggle -->\
-            <div style="margin: 16px 0; padding: 12px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);">\
-              <div style="margin-bottom: 10px; font-weight: 500; font-size: 13px;">How do you want to enter ownership?</div>\
-              <div style="display: flex; gap: 12px;">\
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 12px; border-radius: var(--radius-sm); border: 2px solid var(--color-accent-primary); background: rgba(139, 92, 246, 0.1);">\
+            <div style="margin: 20px 0 16px; padding: 16px; background: var(--color-bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--color-border);">\
+              <div style="margin-bottom: 12px; font-weight: 600; font-size: 14px;">How do you want to enter ownership?</div>\
+              <div style="display: flex; gap: 12px; margin-bottom: 12px;">\
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: var(--radius-md); border: 2px solid var(--color-accent-primary); background: rgba(139, 92, 246, 0.15); flex: 1;" id="ownership-mode-auto-label">\
                   <input type="radio" name="ownership-mode" value="auto" id="ownership-mode-auto" checked style="accent-color: var(--color-accent-primary);">\
-                  <span style="font-size: 13px;">🧮 Auto-Calculate</span>\
+                  <div>\
+                    <div style="font-size: 13px; font-weight: 500;">🧮 Auto-Calculate</div>\
+                    <div style="font-size: 11px; color: var(--color-text-muted);">Requires: Pre-money valuation</div>\
+                  </div>\
                 </label>\
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 12px; border-radius: var(--radius-sm); border: 2px solid var(--color-border);" id="ownership-mode-manual-label">\
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: var(--radius-md); border: 2px solid var(--color-border); background: transparent; flex: 1;" id="ownership-mode-manual-label">\
                   <input type="radio" name="ownership-mode" value="manual" id="ownership-mode-manual" style="accent-color: var(--color-accent-primary);">\
-                  <span style="font-size: 13px;">✏️ Manual Entry</span>\
+                  <div>\
+                    <div style="font-size: 13px; font-weight: 500;">✏️ Manual Entry</div>\
+                    <div style="font-size: 11px; color: var(--color-text-muted);">Enter known ownership %</div>\
+                  </div>\
                 </label>\
               </div>\
-            </div>\
-            \
-            <!-- Auto-Calculate Section -->\
-            <div id="ownership-auto-section">\
-              <div class="form-row">\
-                <div class="form-group">\
-                  <label class="form-label">Pre-money Valuation (₹) *</label>\
-                  <input type="number" class="form-input" id="followon-premoney" min="0" step="1" placeholder="Valuation before this round">\
+              \
+              <!-- Auto-Calculate Section -->\
+              <div id="ownership-auto-section">\
+                <div class="form-row" style="margin-bottom: 0;">\
+                  <div class="form-group" style="margin-bottom: 12px;">\
+                    <label class="form-label">Pre-money Valuation (₹) <span style="color: #f59e0b;">★</span></label>\
+                    <input type="number" class="form-input" id="followon-premoney" min="0" step="1" placeholder="Required for calculation">\
+                  </div>\
+                  <div class="form-group" style="display: flex; align-items: flex-end; margin-bottom: 12px;">\
+                    <button type="button" class="btn btn-primary" id="calc-ownership-btn" style="width: 100%; height: 42px;">🧮 Calculate Ownership</button>\
+                  </div>\
                 </div>\
-                <div class="form-group" style="display: flex; align-items: flex-end;">\
-                  <button type="button" class="btn btn-primary" id="calc-ownership-btn" style="width: 100%;">🧮 Calculate Ownership</button>\
+                <div id="ownership-breakdown" style="display: none; padding: 12px; background: var(--color-bg-tertiary); border-radius: var(--radius-md); margin-bottom: 12px; font-size: 13px;">\
+                </div>\
+                <div class="form-group" style="margin-bottom: 0;">\
+                  <label class="form-label">Calculated Ownership (%)</label>\
+                  <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001" placeholder="Click Calculate" readonly style="background: var(--color-bg-tertiary); cursor: not-allowed;">\
                 </div>\
               </div>\
-              <div id="ownership-breakdown" style="display: none; padding: 12px; background: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: 12px; font-size: 13px;">\
-              </div>\
-              <div class="form-group">\
-                <label class="form-label">Calculated Ownership After (%)</label>\
-                <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001" placeholder="Click Calculate above" readonly style="background: var(--color-bg-secondary);">\
-              </div>\
-            </div>\
-            \
-            <!-- Manual Entry Section (hidden by default) -->\
-            <div id="ownership-manual-section" style="display: none;">\
-              <div class="form-group">\
-                <label class="form-label">Our Ownership After (%) *</label>\
-                <input type="number" class="form-input" id="followon-ownership-manual" min="0" max="100" step="0.001" placeholder="Enter ownership percentage">\
-                <div class="text-xs text-muted" style="margin-top: 4px;">Enter the ownership you know from historical records</div>\
+              \
+              <!-- Manual Entry Section (hidden by default) -->\
+              <div id="ownership-manual-section" style="display: none;">\
+                <div class="form-group" style="margin-bottom: 0;">\
+                  <label class="form-label">Ownership After Round (%) <span style="color: #f59e0b;">★</span></label>\
+                  <input type="number" class="form-input" id="followon-ownership-manual" min="0" max="100" step="0.001" placeholder="Enter ownership from records">\
+                  <div class="text-xs text-muted" style="margin-top: 6px;">💡 Use this for historical data when you know the final ownership</div>\
+                </div>\
               </div>\
             </div>\
             \
+            <!-- Action Buttons -->\
             <div class="form-row" style="margin-top: 16px;">\
-              <div class="form-group" style="display: flex; align-items: flex-end; gap: var(--space-2);">\
+              <div class="form-group" style="display: flex; gap: var(--space-2); margin-bottom: 0;">\
                 <button type="button" class="btn btn-primary" id="save-followon-btn">Add Round</button>\
                 <button type="button" class="btn btn-secondary" id="cancel-followon-btn">Cancel</button>\
               </div>\

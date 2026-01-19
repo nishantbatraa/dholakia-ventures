@@ -627,7 +627,7 @@ FamilyOffice.Portfolio = (function () {
             if (e.target.name === 'ownership-mode') {
                 var autoSection = document.getElementById('ownership-auto-section');
                 var manualSection = document.getElementById('ownership-manual-section');
-                var autoLabel = document.querySelector('label:has(#ownership-mode-auto)');
+                var autoLabel = document.getElementById('ownership-mode-auto-label');
                 var manualLabel = document.getElementById('ownership-mode-manual-label');
 
                 if (e.target.value === 'auto') {
@@ -635,7 +635,7 @@ FamilyOffice.Portfolio = (function () {
                     manualSection.style.display = 'none';
                     if (autoLabel) {
                         autoLabel.style.border = '2px solid var(--color-accent-primary)';
-                        autoLabel.style.background = 'rgba(139, 92, 246, 0.1)';
+                        autoLabel.style.background = 'rgba(139, 92, 246, 0.15)';
                     }
                     if (manualLabel) {
                         manualLabel.style.border = '2px solid var(--color-border)';
@@ -650,7 +650,7 @@ FamilyOffice.Portfolio = (function () {
                     }
                     if (manualLabel) {
                         manualLabel.style.border = '2px solid var(--color-accent-primary)';
-                        manualLabel.style.background = 'rgba(139, 92, 246, 0.1)';
+                        manualLabel.style.background = 'rgba(139, 92, 246, 0.15)';
                     }
                 }
             }
