@@ -129,6 +129,21 @@ FamilyOffice.Portfolio = (function () {
         var pageContent = document.getElementById('page-content');
         var modalContainer = document.getElementById('modal-container');
 
+        // ESC key to close modals
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                // Check if any modal is open
+                if (modalContainer && modalContainer.innerHTML.trim() !== '') {
+                    // Check if confirm dialog is open
+                    if (modalContainer.querySelector('#confirm-overlay')) {
+                        closeConfirm();
+                    } else {
+                        closeModal();
+                    }
+                }
+            }
+        });
+
         // View Toggle
         pageContent.addEventListener('click', function (e) {
             var tab = e.target.closest('.tab');

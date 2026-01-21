@@ -403,6 +403,18 @@ FamilyOffice.Founders = (function () {
     var pageContent = document.getElementById('page-content');
     var modalContainer = document.getElementById('modal-container');
 
+    // ESC key to close modals
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (document.getElementById('founder-modal')) {
+          closeModal();
+        }
+        if (document.getElementById('quick-add-modal')) {
+          closeQuickAddModal();
+        }
+      }
+    });
+
     // Page events
     pageContent.addEventListener('click', function (e) {
       if (e.target.id === 'add-founder-btn' || e.target.id === 'empty-add-founder-btn') {
