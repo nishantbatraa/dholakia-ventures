@@ -639,6 +639,48 @@ FamilyOffice.Data = (function () {
     }
   }
 
+  // Cloud-first data cache (populated when sync is enabled)
+  var cloudDataInitialized = false;
+  var isInitializing = false;
+
+  // Initialize data from cloud (call this on app startup)
+  function initializeFromCloud(callback) {
+    var Supabase = FamilyOffice.Supabase;
+    if (!Supabase || !Supabase.isSyncEnabled || !Supabase.isSyncEnabled()) {
+      cloudDataInitialized = false;
+      if (callback) callback({ success: true, source: 'local' });
+      return;
+    }
+
+    if (isInitializing) {
+      if (callback) callback({ success: false, error: 'Already initializing' });
+      return;
+    }
+
+    isInitializing = true;
+    updateSyncIndicator('syncing');
+
+    Supabase.pullFromCloud()
+      .then(function (result) {
+        cloudDataInitialized = true;
+        isInitializing = false;
+        updateSyncIndicator('synced');
+        console.log('☁️ Loaded from cloud:', result);
+        if (callback) callback({ success: true, source: 'cloud', data: result });
+        // Refresh the UI
+        if (FamilyOffice.App && FamilyOffice.App.refresh) {
+          FamilyOffice.App.refresh();
+        }
+      })
+      .catch(function (err) {
+        cloudDataInitialized = false;
+        isInitializing = false;
+        updateSyncIndicator('error');
+        console.error('❌ Failed to load from cloud:', err);
+        if (callback) callback({ success: false, error: err, source: 'local' });
+      });
+  }
+
   function getCompanies() {
     var stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : SAMPLE_COMPANIES;
@@ -1068,6 +1110,7 @@ FamilyOffice.Data = (function () {
     STATUSES: STATUSES,
     HQ_LOCATIONS: DEFAULT_HQ_LOCATIONS,
     initializeData: initializeData,
+    initializeFromCloud: initializeFromCloud,
     getCompanies: getCompanies,
     getCompanyById: getCompanyById,
     addCompany: addCompany,

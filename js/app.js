@@ -19,7 +19,7 @@ var FamilyOffice = FamilyOffice || {};
     var currentPage = 'dashboard';
 
     function init() {
-        // Initialize data
+        // Initialize data (loads from localStorage first for fast startup)
         Data.initializeData();
 
         // Check for hash
@@ -27,7 +27,7 @@ var FamilyOffice = FamilyOffice || {};
             currentPage = window.location.hash.slice(1) || 'dashboard';
         }
 
-        // Render initial page
+        // Render initial page (with local data)
         renderPage(currentPage);
 
         // Setup navigation
@@ -35,6 +35,14 @@ var FamilyOffice = FamilyOffice || {};
 
         // Setup currency toggle
         setupCurrencyToggle();
+
+        // Initialize from cloud if sync is enabled (will refresh UI when done)
+        // This happens async so the page loads fast with local data first
+        Data.initializeFromCloud(function (result) {
+            if (result.success && result.source === 'cloud') {
+                console.log('☁️ Cloud sync complete - data refreshed');
+            }
+        });
 
         // Handle browser back/forward
         window.addEventListener('popstate', function () {
