@@ -34,17 +34,25 @@ FamilyOffice.Auth = (function () {
         });
     }
 
-    // Get Supabase client (helper)
+    // Get Supabase client (helper) - reuse the client from FamilyOffice.Supabase
     function getSupabaseClient() {
+        // First, try to get the shared client from FamilyOffice.Supabase
+        var Supabase = FamilyOffice.Supabase;
+        if (Supabase && Supabase.getClient) {
+            return Supabase.getClient();
+        }
+
+        // Fallback: use the global shared client or create one
+        if (window._supabaseClient) {
+            return window._supabaseClient;
+        }
+
         if (window.supabase && window.supabase.createClient) {
-            // Access the client from FamilyOffice.Supabase or create one
-            return window._supabaseClient || (function () {
-                window._supabaseClient = window.supabase.createClient(
-                    'https://esgglrbynwhiidfljlrh.supabase.co',
-                    'sb_publishable_9SsVnNYt0Pc_8GQSCUoZzg_wOiVJefl'
-                );
-                return window._supabaseClient;
-            })();
+            window._supabaseClient = window.supabase.createClient(
+                'https://esgglrbynwhiidfljlrh.supabase.co',
+                'sb_publishable_9SsVnNYt0Pc_8GQSCUoZzg_wOiVJefl'
+            );
+            return window._supabaseClient;
         }
         return null;
     }

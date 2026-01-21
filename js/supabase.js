@@ -18,6 +18,8 @@ FamilyOffice.Supabase = (function () {
     function init() {
         if (window.supabase && window.supabase.createClient) {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            // Store to global for sharing with auth.js (avoids multiple client instances)
+            window._supabaseClient = supabase;
             // Check if sync was previously enabled
             syncEnabled = localStorage.getItem('dv_cloud_sync_enabled') === 'true';
             lastSyncTime = localStorage.getItem('dv_last_sync_time');
@@ -26,6 +28,12 @@ FamilyOffice.Supabase = (function () {
             console.warn('Supabase JS library not loaded');
             return false;
         }
+    }
+
+    // Get the Supabase client instance (for sharing with other modules like auth.js)
+    function getClient() {
+        if (!supabase) init();
+        return supabase;
     }
 
     // ============================================
@@ -492,8 +500,11 @@ FamilyOffice.Supabase = (function () {
     }
 
     return {
-        // Storage
+        // Core
         init: init,
+        getClient: getClient,
+
+        // Storage
         uploadFile: uploadFile,
         deleteFile: deleteFile,
         getPublicUrl: getPublicUrl,
