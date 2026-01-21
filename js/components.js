@@ -647,6 +647,27 @@ FamilyOffice.Components = (function () {
     var ownershipHistory = Utils.calculateOwnershipHistory(company);
     var displayOwnership = ownershipHistory.currentOwnership || company.ownership || 0;
 
+    // Calculate Total Invested = Initial + All Follow-on Investments
+    var totalInvested = company.initialInvestment || 0;
+    var followOns = company.followOns || [];
+    followOns.forEach(function (fo) {
+      if (fo.didWeInvest && fo.ourInvestment) {
+        totalInvested += fo.ourInvestment;
+      }
+    });
+
+    // Calculate Latest Valuation = Post-money from most recent round, or initial valuation
+    var latestValuation = company.initialValuation || company.entryValuation || company.latestValuation || 0;
+    if (followOns.length > 0) {
+      // Sort by date and get the latest
+      var sortedRounds = followOns.slice().sort(function (a, b) {
+        return new Date(b.date) - new Date(a.date);
+      });
+      if (sortedRounds[0].roundValuation && sortedRounds[0].roundValuation > 0) {
+        latestValuation = sortedRounds[0].roundValuation;
+      }
+    }
+
     var followOnsHtml = '';
     if (company.followOns && company.followOns.length > 0) {
       var followOnItems = ownershipHistory.rounds.map(function (roundData, index) {
@@ -744,11 +765,13 @@ FamilyOffice.Components = (function () {
       <div class="grid grid-cols-3 gap-4 mt-6">\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Total Invested</div>\
-          <div style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent-tertiary);">' + Utils.formatCurrency(company.totalInvested || company.initialInvestment || 0) + '</div>\
+          <div style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent-tertiary);">' + Utils.formatCurrency(totalInvested) + '</div>\
+          ' + (followOns.length > 0 ? '<div class="text-xs text-muted" style="margin-top: 4px;">Across ' + (followOns.filter(function (f) { return f.didWeInvest && f.ourInvestment > 0; }).length + 1) + ' round(s)</div>' : '') + '\
         </div>\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Latest Valuation</div>\
-          <div style="font-size: 1.25rem; font-weight: 600;">' + Utils.formatCurrency(company.latestValuation) + '</div>\
+          <div style="font-size: 1.25rem; font-weight: 600;">' + Utils.formatCurrency(latestValuation) + '</div>\
+          ' + (followOns.length > 0 ? '<div class="text-xs text-muted" style="margin-top: 4px;">Post-money (latest)</div>' : '<div class="text-xs text-muted" style="margin-top: 4px;">Entry valuation</div>') + '\
         </div>\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Current Ownership</div>\
