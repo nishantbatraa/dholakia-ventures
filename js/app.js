@@ -18,12 +18,14 @@ var FamilyOffice = FamilyOffice || {};
     var Auth = FamilyOffice.Auth;
 
     var currentPage = 'dashboard';
+    var wasSignedOut = false; // Track if user was signed out when app started
 
     function init() {
         // Check authentication first
         Auth.init().then(function (session) {
             if (!session || !session.user) {
                 // Not authenticated - show login page
+                wasSignedOut = true; // Mark that we started in signed-out state
                 showLoginPage();
                 return;
             }
@@ -33,14 +35,27 @@ var FamilyOffice = FamilyOffice || {};
         }).catch(function (err) {
             console.error('Auth init error:', err);
             // If auth fails, show login page
+            wasSignedOut = true;
             showLoginPage();
         });
 
         // Listen for auth state changes
+        // Note: Supabase v2 fires SIGNED_IN on token refresh too, not just actual sign-in
+        // We only want to reload when user actually signs in from login page
         Auth.onAuthStateChange(function (event, session) {
+            console.log('Auth event:', event, 'wasSignedOut:', wasSignedOut);
+
+            // Ignore events that don't represent actual user actions
+            if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+                return; // These fire on page load/token refresh, not user action
+            }
+
             if (event === 'SIGNED_OUT') {
+                wasSignedOut = true;
                 showLoginPage();
-            } else if (event === 'SIGNED_IN' && session) {
+            } else if (event === 'SIGNED_IN' && session && wasSignedOut) {
+                // Only reload if we were on login page (wasSignedOut = true)
+                wasSignedOut = false;
                 window.location.reload();
             }
         });
