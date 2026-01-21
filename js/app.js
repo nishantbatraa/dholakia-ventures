@@ -40,24 +40,16 @@ var FamilyOffice = FamilyOffice || {};
         });
 
         // Listen for auth state changes
-        // Note: Supabase v2 fires SIGNED_IN on token refresh too, not just actual sign-in
-        // We only want to reload when user actually signs in from login page
+        // TEMPORARILY DISABLED: Commenting out reload logic to prevent crash
         Auth.onAuthStateChange(function (event, session) {
-            console.log('Auth event:', event, 'wasSignedOut:', wasSignedOut);
+            console.log('Auth event:', event, 'session:', session ? 'exists' : 'null');
 
-            // Ignore events that don't represent actual user actions
-            if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-                return; // These fire on page load/token refresh, not user action
-            }
-
+            // For now, just log events - don't reload anything
             if (event === 'SIGNED_OUT') {
                 wasSignedOut = true;
                 showLoginPage();
-            } else if (event === 'SIGNED_IN' && session && wasSignedOut) {
-                // Only reload if we were on login page (wasSignedOut = true)
-                wasSignedOut = false;
-                window.location.reload();
             }
+            // Reload disabled to prevent loop - user must refresh manually after login
         });
     }
 
