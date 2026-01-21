@@ -14,6 +14,11 @@ FamilyOffice.Supabase = (function () {
     var syncEnabled = false;
     var lastSyncTime = null;
 
+    // Realtime subscription state
+    var realtimeChannel = null;
+    var realtimeEnabled = false;
+    var realtimeCallbacks = [];
+
     // Initialize Supabase client
     function init() {
         if (window.supabase && window.supabase.createClient) {
@@ -379,6 +384,104 @@ FamilyOffice.Supabase = (function () {
     }
 
     // ============================================
+    // REALTIME SUBSCRIPTIONS
+    // ============================================
+
+    // Subscribe to realtime changes on all data tables
+    function subscribeToRealtime() {
+        if (!supabase) init();
+        if (!supabase) {
+            console.warn('Cannot subscribe to realtime: Supabase not initialized');
+            return false;
+        }
+
+        if (realtimeChannel) {
+            console.log('⚡ Already subscribed to realtime');
+            return true;
+        }
+
+        console.log('⚡ Subscribing to realtime changes...');
+
+        // Create a channel that listens to multiple tables
+        realtimeChannel = supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'companies' },
+                function (payload) {
+                    console.log('⚡ Realtime: companies changed', payload.eventType);
+                    handleRealtimeChange('companies', payload);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'founders' },
+                function (payload) {
+                    console.log('⚡ Realtime: founders changed', payload.eventType);
+                    handleRealtimeChange('founders', payload);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'funds' },
+                function (payload) {
+                    console.log('⚡ Realtime: funds changed', payload.eventType);
+                    handleRealtimeChange('funds', payload);
+                }
+            )
+            .subscribe(function (status) {
+                console.log('⚡ Realtime subscription status:', status);
+                realtimeEnabled = (status === 'SUBSCRIBED');
+            });
+
+        return true;
+    }
+
+    // Handle incoming realtime change
+    function handleRealtimeChange(table, payload) {
+        // Pull fresh data from cloud and update localStorage
+        pullFromCloud().then(function () {
+            // Notify all registered callbacks
+            notifyRealtimeCallbacks(table, payload);
+        }).catch(function (err) {
+            console.error('⚡ Realtime sync error:', err);
+        });
+    }
+
+    // Unsubscribe from realtime changes
+    function unsubscribeFromRealtime() {
+        if (realtimeChannel) {
+            console.log('⚡ Unsubscribing from realtime...');
+            supabase.removeChannel(realtimeChannel);
+            realtimeChannel = null;
+            realtimeEnabled = false;
+        }
+    }
+
+    // Register a callback for realtime changes
+    function onRealtimeChange(callback) {
+        if (typeof callback === 'function') {
+            realtimeCallbacks.push(callback);
+        }
+    }
+
+    // Notify all registered callbacks
+    function notifyRealtimeCallbacks(table, payload) {
+        realtimeCallbacks.forEach(function (cb) {
+            try {
+                cb(table, payload);
+            } catch (e) {
+                console.error('Realtime callback error:', e);
+            }
+        });
+    }
+
+    // Check if realtime is enabled
+    function isRealtimeEnabled() {
+        return realtimeEnabled;
+    }
+
+    // ============================================
     // SYNC MANAGEMENT
     // ============================================
 
@@ -531,6 +634,12 @@ FamilyOffice.Supabase = (function () {
         getLastSyncTime: getLastSyncTime,
         pullFromCloud: pullFromCloud,
         pushToCloud: pushToCloud,
-        checkConnection: checkConnection
+        checkConnection: checkConnection,
+
+        // Realtime
+        subscribeToRealtime: subscribeToRealtime,
+        unsubscribeFromRealtime: unsubscribeFromRealtime,
+        onRealtimeChange: onRealtimeChange,
+        isRealtimeEnabled: isRealtimeEnabled
     };
 })();

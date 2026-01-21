@@ -671,6 +671,23 @@ FamilyOffice.Data = (function () {
         if (FamilyOffice.App && FamilyOffice.App.refresh) {
           FamilyOffice.App.refresh();
         }
+
+        // Subscribe to realtime changes for automatic sync
+        if (Supabase.subscribeToRealtime) {
+          Supabase.subscribeToRealtime();
+
+          // Register callback to refresh UI when remote changes arrive
+          Supabase.onRealtimeChange(function (table, payload) {
+            console.log('⚡ Remote change detected in', table, '- refreshing UI');
+            updateSyncIndicator('syncing');
+            setTimeout(function () {
+              updateSyncIndicator('synced');
+              if (FamilyOffice.App && FamilyOffice.App.refresh) {
+                FamilyOffice.App.refresh();
+              }
+            }, 500);
+          });
+        }
       })
       .catch(function (err) {
         cloudDataInitialized = false;
