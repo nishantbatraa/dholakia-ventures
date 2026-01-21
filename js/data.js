@@ -654,8 +654,17 @@ FamilyOffice.Data = (function () {
 
   function addCompany(company) {
     var companies = getCompanies();
+
+    // Generate unique ID with timestamp + random suffix to avoid duplicates
+    var uniqueId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+
+    // Check if ID already exists (extra safety)
+    while (companies.some(function (c) { return c.id === uniqueId; })) {
+      uniqueId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
     var newCompany = Object.assign({}, company, {
-      id: Date.now().toString(),
+      id: uniqueId,
       followOns: company.followOns || [],
       totalInvested: company.initialInvestment + (company.followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0)
     });
