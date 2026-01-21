@@ -15,10 +15,45 @@ var FamilyOffice = FamilyOffice || {};
     var Funds = FamilyOffice.Funds;
     var Legal = FamilyOffice.Legal;
     var Utils = FamilyOffice.Utils;
+    var Auth = FamilyOffice.Auth;
 
     var currentPage = 'dashboard';
 
     function init() {
+        // Check authentication first
+        Auth.init().then(function (session) {
+            if (!session || !session.user) {
+                // Not authenticated - show login page
+                showLoginPage();
+                return;
+            }
+
+            // User is authenticated - proceed with app
+            initApp();
+        }).catch(function (err) {
+            console.error('Auth init error:', err);
+            // If auth fails, show login page
+            showLoginPage();
+        });
+
+        // Listen for auth state changes
+        Auth.onAuthStateChange(function (event, session) {
+            if (event === 'SIGNED_OUT') {
+                showLoginPage();
+            } else if (event === 'SIGNED_IN' && session) {
+                window.location.reload();
+            }
+        });
+    }
+
+    function showLoginPage() {
+        var appContainer = document.getElementById('app-container');
+        if (appContainer) {
+            appContainer.innerHTML = Auth.renderLoginPage();
+        }
+    }
+
+    function initApp() {
         // Initialize data (loads from localStorage first for fast startup)
         Data.initializeData();
 
@@ -172,6 +207,16 @@ var FamilyOffice = FamilyOffice || {};
             if (e.target.id === 'currency-usd' || e.target.closest('#currency-usd')) {
                 Utils.setCurrency('USD');
                 refresh();
+            }
+            // Logout button
+            if (e.target.id === 'logout-btn' || e.target.closest('#logout-btn')) {
+                e.preventDefault();
+                Auth.signOut().then(function () {
+                    showLoginPage();
+                }).catch(function (err) {
+                    console.error('Logout error:', err);
+                    alert('Failed to logout: ' + err.message);
+                });
             }
         });
     }
