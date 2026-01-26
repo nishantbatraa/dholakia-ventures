@@ -91,11 +91,13 @@ FamilyOffice.Data = (function () {
       localStorage.setItem(CUSTOM_INDUSTRIES_KEY, JSON.stringify(custom));
       // Also restore if it was removed
       restoreFromRemoved(REMOVED_INDUSTRIES_KEY, name);
+      triggerAutoSync('added', 'industry');
       return true;
     }
     // If it exists but was removed, restore it
     if (getRemovedItems(REMOVED_INDUSTRIES_KEY).indexOf(name) !== -1) {
       restoreFromRemoved(REMOVED_INDUSTRIES_KEY, name);
+      triggerAutoSync('restored', 'industry');
       return true;
     }
     return false;
@@ -108,6 +110,7 @@ FamilyOffice.Data = (function () {
     localStorage.setItem(CUSTOM_INDUSTRIES_KEY, JSON.stringify(filtered));
     // Add to removed list (works for both custom and default)
     addToRemoved(REMOVED_INDUSTRIES_KEY, name);
+    triggerAutoSync('removed', 'industry');
   }
 
   function getAllIndustries() {
@@ -135,10 +138,12 @@ FamilyOffice.Data = (function () {
       custom.push(name);
       localStorage.setItem(CUSTOM_TEAM_KEY, JSON.stringify(custom));
       restoreFromRemoved(REMOVED_TEAM_KEY, name);
+      triggerAutoSync('added', 'team');
       return true;
     }
     if (getRemovedItems(REMOVED_TEAM_KEY).indexOf(name) !== -1) {
       restoreFromRemoved(REMOVED_TEAM_KEY, name);
+      triggerAutoSync('restored', 'team');
       return true;
     }
     return false;
@@ -149,6 +154,7 @@ FamilyOffice.Data = (function () {
     var filtered = custom.filter(function (m) { return m !== name; });
     localStorage.setItem(CUSTOM_TEAM_KEY, JSON.stringify(filtered));
     addToRemoved(REMOVED_TEAM_KEY, name);
+    triggerAutoSync('removed', 'team');
   }
 
   function getAllTeamMembers() {
@@ -176,10 +182,12 @@ FamilyOffice.Data = (function () {
       custom.push(name);
       localStorage.setItem(CUSTOM_HQ_KEY, JSON.stringify(custom));
       restoreFromRemoved(REMOVED_HQ_KEY, name);
+      triggerAutoSync('added', 'hq');
       return true;
     }
     if (getRemovedItems(REMOVED_HQ_KEY).indexOf(name) !== -1) {
       restoreFromRemoved(REMOVED_HQ_KEY, name);
+      triggerAutoSync('restored', 'hq');
       return true;
     }
     return false;
@@ -190,6 +198,7 @@ FamilyOffice.Data = (function () {
     var filtered = custom.filter(function (h) { return h !== name; });
     localStorage.setItem(CUSTOM_HQ_KEY, JSON.stringify(filtered));
     addToRemoved(REMOVED_HQ_KEY, name);
+    triggerAutoSync('removed', 'hq');
   }
 
   function getAllHQLocations() {
@@ -868,6 +877,7 @@ FamilyOffice.Data = (function () {
       if (data.funds) {
         localStorage.setItem(FUNDS_KEY, JSON.stringify(data.funds));
       }
+      triggerAutoSync('imported', 'all');
       return { success: true, message: 'Data imported successfully' };
     } catch (e) {
       return { success: false, message: 'Invalid JSON format: ' + e.message };
@@ -886,6 +896,7 @@ FamilyOffice.Data = (function () {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_COMPANIES));
     // Reset founders
     localStorage.removeItem(FOUNDERS_KEY);
+    triggerAutoSync('reset', 'all');
   }
 
   // ============================================
@@ -998,6 +1009,7 @@ FamilyOffice.Data = (function () {
         break;
       }
     }
+    triggerAutoSync('linked', 'founder');
   }
 
   // Unlink a founder from a company
@@ -1021,6 +1033,7 @@ FamilyOffice.Data = (function () {
         break;
       }
     }
+    triggerAutoSync('unlinked', 'founder');
   }
 
   // ============================================
@@ -1051,6 +1064,7 @@ FamilyOffice.Data = (function () {
     });
     funds.push(newFund);
     localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
+    triggerAutoSync('added', 'fund');
     return newFund;
   }
 
@@ -1061,6 +1075,7 @@ FamilyOffice.Data = (function () {
         funds[i] = Object.assign({}, funds[i], updates);
         funds[i].updatedAt = new Date().toISOString();
         localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
+        triggerAutoSync('updated', 'fund');
         return funds[i];
       }
     }
@@ -1071,6 +1086,7 @@ FamilyOffice.Data = (function () {
     var funds = getFunds();
     var filtered = funds.filter(function (f) { return f.id !== id; });
     localStorage.setItem(FUNDS_KEY, JSON.stringify(filtered));
+    triggerAutoSync('deleted', 'fund');
   }
 
   // Fund helper functions
