@@ -318,15 +318,28 @@ FamilyOffice.Analytics = (function () {
     var filterHtml = buildFilterUI(allCompanies);
     var industryHtml = buildIndustryChart(industryData);
     var stageHtml = buildStageChart(stageData);
+    var stagePieHtml = buildStagePieChart();
     var timelineHtml = buildTimelineChart(timelineData);
     var topInvestmentsHtml = buildTopInvestmentsTable(topByInvestment);
     var unrealizedHtml = buildUnrealizedTable(unrealizedGains);
     var teamHtml = buildTeamCards(teamPerf);
     var followOnHtml = buildFollowOnStats(followOnStats);
     var geoHtml = buildGeographicChart(geoData);
+    var geoRegionCardsHtml = buildGeoRegionCards(geoData);
     var healthHtml = buildHealthIndicators(healthData);
 
+    // New analytics features
+    var portfolioValueData = getPortfolioValueOverTime(companies);
+    window._chartData = window._chartData || {};
+    window._chartData.portfolioValue = portfolioValueData;
+    var portfolioValueHtml = buildPortfolioValueChart();
+
+    var vintageData = getVintageYearAnalysis(companies);
+    var vintageHtml = buildVintageAnalysis(vintageData);
+
     var blendedMoic = metrics.totalInvested > 0 ? (metrics.unrealizedValue + metrics.totalExitValue) / metrics.totalInvested : 0;
+
+    var returnsDashboardHtml = buildReturnsDashboard(companies, metrics, portfolioXIRR, blendedMoic);
 
     // Check if any filters are active
     var hasActiveFilters = filters.stage !== 'all' || filters.industry !== 'all' ||
@@ -366,11 +379,26 @@ FamilyOffice.Analytics = (function () {
           </div>\
         </div>\
         \
+        <!-- Returns Dashboard (NEW) -->\
+        ' + returnsDashboardHtml + '\
+        \
         <!-- Follow-on Tracking Stats -->\
         ' + followOnHtml + '\
         \
         <!-- Portfolio Health Indicators -->\
         ' + healthHtml + '\
+        \
+        <!-- Portfolio Value Over Time (NEW) -->\
+        <div class="card mb-6">\
+          <div class="card-header"><h3 class="card-title">Portfolio Value Over Time</h3></div>\
+          <div style="padding: 20px;">' + portfolioValueHtml + '</div>\
+        </div>\
+        \
+        <!-- Vintage Year Analysis (NEW) -->\
+        <div class="card mb-6">\
+          <div class="card-header"><h3 class="card-title">Vintage Year Analysis</h3></div>\
+          <div style="padding: 20px;">' + vintageHtml + '</div>\
+        </div>\
         \
         <!-- Charts Row -->\
         <div class="grid grid-cols-2 gap-6 mb-6">\
@@ -380,13 +408,17 @@ FamilyOffice.Analytics = (function () {
           </div>\
           <div class="card">\
             <div class="card-header"><h3 class="card-title">Portfolio by Stage</h3></div>\
-            <div class="flex flex-col gap-4">' + stageHtml + '</div>\
+            <div class="grid grid-cols-2 gap-4">\
+              <div>' + stageHtml + '</div>\
+              <div>' + stagePieHtml + '</div>\
+            </div>\
           </div>\
         </div>\
         \
         <!-- Geographic Distribution -->\
         <div class="card mb-6">\
           <div class="card-header"><h3 class="card-title">Geographic Distribution</h3></div>\
+          ' + geoRegionCardsHtml + '\
           <div class="flex flex-col gap-3">' + geoHtml + '</div>\
         </div>\
         \
@@ -683,6 +715,316 @@ FamilyOffice.Analytics = (function () {
             y: {
               grid: { display: false },
               ticks: { color: '#f3f4f6', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    // NEW: Portfolio Value Over Time Line Chart
+    var portfolioValueCanvas = document.getElementById('portfolio-value-chart');
+    if (portfolioValueCanvas && data.portfolioValue && data.portfolioValue.length > 0) {
+      var ctx5 = portfolioValueCanvas.getContext('2d');
+      var investedGradient = ctx5.createLinearGradient(0, 0, 0, 280);
+      investedGradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+      investedGradient.addColorStop(1, 'rgba(99, 102, 241, 0.05)');
+
+      var valueGradient = ctx5.createLinearGradient(0, 0, 0, 280);
+      valueGradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+      valueGradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+
+      chartInstances.portfolioValue = new Chart(ctx5, {
+        type: 'line',
+        data: {
+          labels: data.portfolioValue.map(function (d) {
+            return d.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          }),
+          datasets: [{
+            label: 'Invested Capital',
+            data: data.portfolioValue.map(function (d) { return d.invested; }),
+            borderColor: '#6366f1',
+            backgroundColor: investedGradient,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+            pointHoverRadius: 6
+          }, {
+            label: 'Portfolio Value',
+            data: data.portfolioValue.map(function (d) { return d.value; }),
+            borderColor: '#10b981',
+            backgroundColor: valueGradient,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: '#9ca3af',
+                padding: 16,
+                font: { size: 11 },
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#f3f4f6',
+              bodyColor: '#d1d5db',
+              padding: 12,
+              callbacks: {
+                label: function (context) {
+                  return context.dataset.label + ': ' + Utils.formatCurrency(context.raw);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#9ca3af', maxRotation: 45, font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#9ca3af',
+                callback: function (value) { return Utils.formatCurrency(value); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // NEW: Vintage Year Grouped Bar Chart
+    var vintageCanvas = document.getElementById('vintage-chart');
+    if (vintageCanvas && data.vintage && data.vintage.length > 0) {
+      var ctx6 = vintageCanvas.getContext('2d');
+      chartInstances.vintage = new Chart(ctx6, {
+        type: 'bar',
+        data: {
+          labels: data.vintage.map(function (d) { return d.year; }),
+          datasets: [{
+            label: 'Invested',
+            data: data.vintage.map(function (d) { return d.invested; }),
+            backgroundColor: '#6366f1',
+            borderRadius: 4,
+            maxBarThickness: 30
+          }, {
+            label: 'Current Value',
+            data: data.vintage.map(function (d) { return d.value; }),
+            backgroundColor: '#10b981',
+            borderRadius: 4,
+            maxBarThickness: 30
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: '#9ca3af',
+                padding: 12,
+                font: { size: 11 },
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#f3f4f6',
+              bodyColor: '#d1d5db',
+              padding: 12,
+              callbacks: {
+                label: function (context) {
+                  var item = data.vintage[context.dataIndex];
+                  return context.dataset.label + ': ' + Utils.formatCurrency(context.raw) +
+                    (context.datasetIndex === 1 ? ' (MOIC: ' + Utils.formatMOIC(item.moic) + ')' : '');
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#9ca3af' }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#9ca3af',
+                callback: function (value) { return Utils.formatCurrency(value); }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // NEW: Stage Pie/Doughnut Chart
+    var stagePieCanvas = document.getElementById('stage-pie-chart');
+    if (stagePieCanvas && data.stage && data.stage.length > 0) {
+      var stageColors = {
+        'Pre-Seed': '#9ca3af',
+        'Seed': '#f59e0b',
+        'Pre Series A': '#84cc16',
+        'Series A': '#3b82f6',
+        'Series B & Above': '#8b5cf6',
+        'Pre-IPO': '#10b981'
+      };
+      var ctx7 = stagePieCanvas.getContext('2d');
+      chartInstances.stagePie = new Chart(ctx7, {
+        type: 'doughnut',
+        data: {
+          labels: data.stage.map(function (d) { return d.stage; }),
+          datasets: [{
+            data: data.stage.map(function (d) { return d.count; }),
+            backgroundColor: data.stage.map(function (d) { return stageColors[d.stage] || '#6366f1'; }),
+            borderWidth: 0,
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '55%',
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#f3f4f6',
+              bodyColor: '#d1d5db',
+              padding: 12,
+              callbacks: {
+                label: function (context) {
+                  var item = data.stage[context.dataIndex];
+                  return item.stage + ': ' + item.count + ' companies (' + Utils.formatCurrency(item.invested) + ')';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // NEW: MOIC by Vintage Mini Chart
+    var moicVintageCanvas = document.getElementById('moic-vintage-chart');
+    if (moicVintageCanvas && data.moicVintage && data.moicVintage.length > 0) {
+      var ctx8 = moicVintageCanvas.getContext('2d');
+      chartInstances.moicVintage = new Chart(ctx8, {
+        type: 'bar',
+        data: {
+          labels: data.moicVintage.map(function (d) { return d.year; }),
+          datasets: [{
+            label: 'MOIC',
+            data: data.moicVintage.map(function (d) { return d.moic; }),
+            backgroundColor: data.moicVintage.map(function (d) {
+              return d.moic >= 2 ? '#10b981' : d.moic >= 1 ? '#f59e0b' : '#ef4444';
+            }),
+            borderRadius: 3,
+            maxBarThickness: 20
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#f3f4f6',
+              bodyColor: '#d1d5db',
+              padding: 8,
+              callbacks: {
+                label: function (context) {
+                  var item = data.moicVintage[context.dataIndex];
+                  return Utils.formatMOIC(context.raw) + ' (' + item.count + ' deals)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#9ca3af',
+                font: { size: 9 },
+                callback: function (value) { return value.toFixed(1) + 'x'; }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#f3f4f6', font: { size: 9 } }
+            }
+          }
+        }
+      });
+    }
+
+    // NEW: MOIC by Stage Mini Chart
+    var moicStageCanvas = document.getElementById('moic-stage-chart');
+    if (moicStageCanvas && data.moicStage && data.moicStage.length > 0) {
+      var ctx9 = moicStageCanvas.getContext('2d');
+      chartInstances.moicStage = new Chart(ctx9, {
+        type: 'bar',
+        data: {
+          labels: data.moicStage.map(function (d) { return d.stage; }),
+          datasets: [{
+            label: 'MOIC',
+            data: data.moicStage.map(function (d) { return d.moic; }),
+            backgroundColor: data.moicStage.map(function (d) {
+              return d.moic >= 2 ? '#10b981' : d.moic >= 1 ? '#f59e0b' : '#ef4444';
+            }),
+            borderRadius: 3,
+            maxBarThickness: 20
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#f3f4f6',
+              bodyColor: '#d1d5db',
+              padding: 8,
+              callbacks: {
+                label: function (context) {
+                  var item = data.moicStage[context.dataIndex];
+                  return Utils.formatMOIC(context.raw) + ' (' + item.count + ' deals)';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#9ca3af',
+                font: { size: 9 },
+                callback: function (value) { return value.toFixed(1) + 'x'; }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#f3f4f6', font: { size: 9 } }
             }
           }
         }
@@ -986,6 +1328,344 @@ FamilyOffice.Analytics = (function () {
           <div style="padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--color-danger);">\
             <div class="text-xs text-muted mb-1">Investments at Risk</div>\
             <div class="text-sm">' + atRiskList + '</div>\
+          </div>\
+        </div>\
+      </div>';
+  }
+
+  // ============================================
+  // NEW FEATURE 1: Portfolio Value Over Time
+  // ============================================
+  function getPortfolioValueOverTime(companies) {
+    // Collect all investment events (initial + follow-ons)
+    var events = [];
+
+    companies.forEach(function (c) {
+      // Initial investment
+      events.push({
+        date: new Date(c.entryDate),
+        invested: c.initialInvestment || 0,
+        company: c.name
+      });
+
+      // Follow-on investments
+      (c.followOns || []).forEach(function (f) {
+        if (f.didWeInvest) {
+          events.push({
+            date: new Date(f.date),
+            invested: f.ourInvestment || f.amount || 0,
+            company: c.name
+          });
+        }
+      });
+    });
+
+    // Sort by date
+    events.sort(function (a, b) { return a.date - b.date; });
+
+    if (events.length === 0) return [];
+
+    // Calculate cumulative invested capital at each point
+    var cumulativeInvested = 0;
+    var dataPoints = [];
+    var seenDates = {};
+
+    events.forEach(function (e) {
+      cumulativeInvested += e.invested;
+      var dateKey = e.date.toISOString().split('T')[0];
+
+      // Aggregate same-day events
+      if (seenDates[dateKey]) {
+        seenDates[dateKey].invested = cumulativeInvested;
+      } else {
+        seenDates[dateKey] = {
+          date: e.date,
+          invested: cumulativeInvested
+        };
+      }
+    });
+
+    // Convert to array and calculate estimated portfolio value at each point
+    var dateKeys = Object.keys(seenDates).sort();
+    var totalCurrentValue = companies.reduce(function (sum, c) {
+      if (c.status === 'Exited') {
+        return sum + (c.exitValue || 0);
+      }
+      return sum + ((c.latestValuation || 0) * ((c.ownership || 0) / 100));
+    }, 0);
+    var totalInvested = companies.reduce(function (sum, c) { return sum + (c.totalInvested || 0); }, 0);
+    var currentMoic = totalInvested > 0 ? totalCurrentValue / totalInvested : 1;
+
+    dataPoints = dateKeys.map(function (key) {
+      var item = seenDates[key];
+      // Estimate value as invested * blended MOIC (simplified)
+      return {
+        date: item.date,
+        invested: item.invested,
+        value: item.invested * currentMoic
+      };
+    });
+
+    // Add current date point
+    var now = new Date();
+    dataPoints.push({
+      date: now,
+      invested: totalInvested,
+      value: totalCurrentValue
+    });
+
+    return dataPoints;
+  }
+
+  function buildPortfolioValueChart() {
+    return '<div style="height: 280px; position: relative;"><canvas id="portfolio-value-chart"></canvas></div>';
+  }
+
+  // ============================================
+  // NEW FEATURE 2: Stage Pie Chart (enhancement)
+  // ============================================
+  function buildStagePieChart() {
+    return '<div style="height: 280px; position: relative;"><canvas id="stage-pie-chart"></canvas></div>';
+  }
+
+  // ============================================
+  // NEW FEATURE 3: Geographic Region Cards
+  // ============================================
+  function buildGeoRegionCards(geoData) {
+    if (geoData.length === 0) return '';
+
+    // Define Indian cities
+    var indianCities = ['Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai', 'Pune', 'Kolkata', 'Gurugram', 'Noida', 'Bengaluru'];
+
+    var indiaData = { count: 0, invested: 0, cities: [] };
+    var intlData = { count: 0, invested: 0, cities: [] };
+
+    geoData.forEach(function (g) {
+      var isIndia = indianCities.some(function (city) {
+        return g.location.toLowerCase().indexOf(city.toLowerCase()) !== -1;
+      });
+
+      if (isIndia) {
+        indiaData.count += g.count;
+        indiaData.invested += g.invested;
+        indiaData.cities.push(g.location);
+      } else {
+        intlData.count += g.count;
+        intlData.invested += g.invested;
+        intlData.cities.push(g.location);
+      }
+    });
+
+    var totalInvested = indiaData.invested + intlData.invested;
+    var indiaPercent = totalInvested > 0 ? (indiaData.invested / totalInvested * 100).toFixed(1) : 0;
+    var intlPercent = totalInvested > 0 ? (intlData.invested / totalInvested * 100).toFixed(1) : 0;
+
+    return '\
+      <div class="grid grid-cols-2 gap-4 mb-4">\
+        <div style="padding: 16px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05)); border-radius: var(--radius-lg); border: 1px solid rgba(16, 185, 129, 0.2);">\
+          <div class="flex items-center gap-2 mb-2">\
+            <span style="font-size: 1.2rem;">🇮🇳</span>\
+            <span style="font-weight: 600;">India</span>\
+            <span class="text-sm text-muted ml-auto">' + indiaPercent + '% of portfolio</span>\
+          </div>\
+          <div class="flex justify-between mb-1">\
+            <span class="text-sm text-muted">' + indiaData.count + ' companies</span>\
+            <span style="font-weight: 600; color: #10b981;">' + Utils.formatCurrency(indiaData.invested) + '</span>\
+          </div>\
+          <div class="text-xs text-muted">' + indiaData.cities.slice(0, 4).join(', ') + (indiaData.cities.length > 4 ? '...' : '') + '</div>\
+        </div>\
+        <div style="padding: 16px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05)); border-radius: var(--radius-lg); border: 1px solid rgba(59, 130, 246, 0.2);">\
+          <div class="flex items-center gap-2 mb-2">\
+            <span style="font-size: 1.2rem;">🌍</span>\
+            <span style="font-weight: 600;">International</span>\
+            <span class="text-sm text-muted ml-auto">' + intlPercent + '% of portfolio</span>\
+          </div>\
+          <div class="flex justify-between mb-1">\
+            <span class="text-sm text-muted">' + intlData.count + ' companies</span>\
+            <span style="font-weight: 600; color: #3b82f6;">' + Utils.formatCurrency(intlData.invested) + '</span>\
+          </div>\
+          <div class="text-xs text-muted">' + intlData.cities.slice(0, 4).join(', ') + (intlData.cities.length > 4 ? '...' : '') + '</div>\
+        </div>\
+      </div>';
+  }
+
+  // ============================================
+  // NEW FEATURE 4: Vintage Year Analysis
+  // ============================================
+  function getVintageYearAnalysis(companies) {
+    var byYear = {};
+
+    companies.forEach(function (c) {
+      var year = new Date(c.entryDate).getFullYear();
+      if (!byYear[year]) {
+        byYear[year] = {
+          year: year,
+          count: 0,
+          invested: 0,
+          value: 0,
+          moicSum: 0
+        };
+      }
+
+      byYear[year].count++;
+      byYear[year].invested += c.totalInvested || 0;
+
+      // Calculate current value
+      var currentValue = 0;
+      if (c.status === 'Exited') {
+        currentValue = c.exitValue || 0;
+      } else {
+        currentValue = (c.latestValuation || 0) * ((c.ownership || 0) / 100);
+      }
+      byYear[year].value += currentValue;
+
+      // Track MOIC
+      var invested = c.totalInvested || 0;
+      if (invested > 0) {
+        byYear[year].moicSum += currentValue / invested;
+      }
+    });
+
+    // Calculate MOIC per vintage
+    return Object.keys(byYear)
+      .sort()
+      .map(function (year) {
+        var data = byYear[year];
+        return {
+          year: data.year,
+          count: data.count,
+          invested: data.invested,
+          value: data.value,
+          moic: data.invested > 0 ? data.value / data.invested : 0,
+          avgMoic: data.count > 0 ? data.moicSum / data.count : 0
+        };
+      });
+  }
+
+  function buildVintageAnalysis(vintageData) {
+    if (vintageData.length === 0) {
+      return '<div class="text-muted" style="text-align: center; padding: 20px;">No vintage data available</div>';
+    }
+
+    // Store for chart
+    window._chartData = window._chartData || {};
+    window._chartData.vintage = vintageData;
+
+    // Build table
+    var tableRows = vintageData.map(function (v) {
+      var moicColor = v.moic >= 2 ? 'var(--color-success)' : v.moic >= 1 ? 'var(--color-warning)' : 'var(--color-danger)';
+      return '\
+        <tr>\
+          <td style="font-weight: 600;">' + v.year + '</td>\
+          <td>' + v.count + '</td>\
+          <td>' + Utils.formatCurrency(v.invested) + '</td>\
+          <td>' + Utils.formatCurrency(v.value) + '</td>\
+          <td style="color: ' + moicColor + '; font-weight: 600;">' + Utils.formatMOIC(v.moic) + '</td>\
+        </tr>';
+    }).join('');
+
+    return '\
+      <div class="grid grid-cols-2 gap-6">\
+        <div style="height: 280px; position: relative;"><canvas id="vintage-chart"></canvas></div>\
+        <div style="overflow-x: auto;">\
+          <table class="table" style="margin: 0; font-size: 13px;">\
+            <thead>\
+              <tr>\
+                <th>Vintage</th>\
+                <th>Deals</th>\
+                <th>Invested</th>\
+                <th>Value</th>\
+                <th>MOIC</th>\
+              </tr>\
+            </thead>\
+            <tbody>' + tableRows + '</tbody>\
+          </table>\
+        </div>\
+      </div>';
+  }
+
+  // ============================================
+  // NEW FEATURE 5: MOIC/IRR Dashboard
+  // ============================================
+  function buildReturnsDashboard(companies, metrics, portfolioXIRR, blendedMoic) {
+    // Calculate DPI and TVPI
+    var totalInvested = metrics.totalInvested;
+    var distributions = companies.reduce(function (sum, c) {
+      if (c.status === 'Exited') {
+        return sum + (c.exitValue || 0);
+      }
+      return sum;
+    }, 0);
+    var unrealizedValue = metrics.unrealizedValue;
+
+    var dpi = totalInvested > 0 ? distributions / totalInvested : 0;
+    var tvpi = totalInvested > 0 ? (unrealizedValue + distributions) / totalInvested : 0;
+
+    // Calculate MOIC by vintage (for mini chart)
+    var vintageData = getVintageYearAnalysis(companies);
+    window._chartData = window._chartData || {};
+    window._chartData.moicVintage = vintageData;
+
+    // Calculate MOIC by stage
+    var stageData = Data.STAGES.map(function (stage) {
+      var stageComps = companies.filter(function (c) {
+        var companyStage = c.currentStage || c.entryStage;
+        return companyStage === stage;
+      });
+
+      var invested = stageComps.reduce(function (sum, c) { return sum + (c.totalInvested || 0); }, 0);
+      var value = stageComps.reduce(function (sum, c) {
+        if (c.status === 'Exited') return sum + (c.exitValue || 0);
+        return sum + ((c.latestValuation || 0) * ((c.ownership || 0) / 100));
+      }, 0);
+
+      return {
+        stage: stage,
+        moic: invested > 0 ? value / invested : 0,
+        count: stageComps.length
+      };
+    }).filter(function (s) { return s.count > 0; });
+
+    window._chartData.moicStage = stageData;
+
+    var xirrColor = portfolioXIRR >= 0.25 ? 'var(--color-success)' : portfolioXIRR >= 0.15 ? 'var(--color-warning)' : 'var(--color-accent-primary)';
+    var moicColor = blendedMoic >= 2 ? 'var(--color-success)' : blendedMoic >= 1 ? 'var(--color-warning)' : 'var(--color-danger)';
+    var dpiColor = dpi >= 0.5 ? 'var(--color-success)' : dpi >= 0.25 ? 'var(--color-warning)' : 'var(--color-muted)';
+    var tvpiColor = tvpi >= 2 ? 'var(--color-success)' : tvpi >= 1 ? 'var(--color-warning)' : 'var(--color-danger)';
+
+    return '\
+      <div class="card mb-6">\
+        <div class="card-header"><h3 class="card-title">Returns Dashboard</h3></div>\
+        <div class="grid grid-cols-4 gap-4 mb-4">\
+          <div style="padding: 20px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.1)); border-radius: var(--radius-lg); text-align: center;">\
+            <div class="text-xs text-muted mb-1">Portfolio XIRR</div>\
+            <div style="font-size: 1.8rem; font-weight: 700; color: ' + xirrColor + ';">' + Utils.formatXIRR(portfolioXIRR) + '</div>\
+            <div class="text-xs text-muted mt-1">Annualized Return</div>\
+          </div>\
+          <div style="padding: 20px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1)); border-radius: var(--radius-lg); text-align: center;">\
+            <div class="text-xs text-muted mb-1">Blended MOIC</div>\
+            <div style="font-size: 1.8rem; font-weight: 700; color: ' + moicColor + ';">' + Utils.formatMOIC(blendedMoic) + '</div>\
+            <div class="text-xs text-muted mt-1">Multiple on Invested</div>\
+          </div>\
+          <div style="padding: 20px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1)); border-radius: var(--radius-lg); text-align: center;">\
+            <div class="text-xs text-muted mb-1">DPI</div>\
+            <div style="font-size: 1.8rem; font-weight: 700; color: ' + dpiColor + ';">' + dpi.toFixed(2) + 'x</div>\
+            <div class="text-xs text-muted mt-1">Distributions / Paid-In</div>\
+          </div>\
+          <div style="padding: 20px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.1)); border-radius: var(--radius-lg); text-align: center;">\
+            <div class="text-xs text-muted mb-1">TVPI</div>\
+            <div style="font-size: 1.8rem; font-weight: 700; color: ' + tvpiColor + ';">' + tvpi.toFixed(2) + 'x</div>\
+            <div class="text-xs text-muted mt-1">Total Value / Paid-In</div>\
+          </div>\
+        </div>\
+        <div class="grid grid-cols-2 gap-4">\
+          <div style="padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-lg);">\
+            <div class="text-sm text-muted mb-2">MOIC by Vintage Year</div>\
+            <div style="height: 120px; position: relative;"><canvas id="moic-vintage-chart"></canvas></div>\
+          </div>\
+          <div style="padding: 16px; background: var(--color-bg-tertiary); border-radius: var(--radius-lg);">\
+            <div class="text-sm text-muted mb-2">MOIC by Stage</div>\
+            <div style="height: 120px; position: relative;"><canvas id="moic-stage-chart"></canvas></div>\
           </div>\
         </div>\
       </div>';
