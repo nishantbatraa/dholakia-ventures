@@ -72,10 +72,6 @@ FamilyOffice.Components = (function () {
     return '\
       <h1 class="header-title">' + title + '</h1>\
       <div class="header-actions">\
-        <div class="header-search">\
-          ' + icons.search + '\
-          <input type="text" id="global-search" placeholder="Search companies...">\
-        </div>\
         <div class="currency-toggle">\
           <button class="btn btn-sm ' + (currentCurrency === 'INR' ? 'btn-primary' : 'btn-secondary') + '" id="currency-inr">₹ INR</button>\
           <button class="btn btn-sm ' + (currentCurrency === 'USD' ? 'btn-primary' : 'btn-secondary') + '" id="currency-usd">$ USD</button>\

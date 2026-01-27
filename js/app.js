@@ -193,28 +193,6 @@ var FamilyOffice = FamilyOffice || {};
                 renderPage(page);
             }
         });
-
-        // Global search
-        document.addEventListener('input', function (e) {
-            if (e.target.id === 'global-search') {
-                clearTimeout(window._searchTimeout);
-                window._searchTimeout = setTimeout(function () {
-                    if (e.target.value.length > 0 && currentPage !== 'portfolio') {
-                        currentPage = 'portfolio';
-                        window.location.hash = 'portfolio';
-                        renderPage('portfolio');
-
-                        setTimeout(function () {
-                            var filterSearch = document.getElementById('filter-search');
-                            if (filterSearch) {
-                                filterSearch.value = e.target.value;
-                                filterSearch.dispatchEvent(new Event('input', { bubbles: true }));
-                            }
-                        }, 100);
-                    }
-                }, 300);
-            }
-        });
     }
 
     function setupCurrencyToggle() {
