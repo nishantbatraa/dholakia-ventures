@@ -90,10 +90,20 @@ FamilyOffice.Dashboard = (function () {
     var companies = Data.getCompanies();
     var widgets = getWidgetPreferences();
 
-    // Recent investments
+    // Recent investments - sorted by latest investment date/time
     var recentInvestments = companies
       .filter(function (c) { return c.status === 'Active'; })
-      .sort(function (a, b) { return new Date(b.lastInvestmentDate) - new Date(a.lastInvestmentDate); })
+      .sort(function (a, b) {
+        // Primary sort: lastInvestmentDate (most recent first)
+        var dateA = a.lastInvestmentDate || a.entryDate || '';
+        var dateB = b.lastInvestmentDate || b.entryDate || '';
+        var dateDiff = new Date(dateB) - new Date(dateA);
+        if (dateDiff !== 0) return dateDiff;
+        // Secondary sort: createdAt timestamp for same-date entries
+        var createdA = a.createdAt || '';
+        var createdB = b.createdAt || '';
+        return new Date(createdB) - new Date(createdA);
+      })
       .slice(0, 5);
 
     // Top performers - sorted by valuation growth
@@ -130,8 +140,10 @@ FamilyOffice.Dashboard = (function () {
     // Build recent investments HTML
     var recentHtml = recentInvestments.map(function (company) {
       var avatarColor = Utils.getAvatarColor(company.name);
-      var entryDate = new Date(company.entryDate);
-      var monthYear = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      // Show lastInvestmentDate (most recent activity), fallback to entryDate
+      var investmentDate = new Date(company.lastInvestmentDate || company.entryDate);
+      var monthYear = investmentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      // Show current stage (not entry stage) and total invested (not just initial)
       return '\
         <div class="flex items-center justify-between" style="padding: 12px; background: var(--color-bg-tertiary); border-radius: var(--radius-lg);">\
           <div class="flex items-center gap-3">\
@@ -144,8 +156,8 @@ FamilyOffice.Dashboard = (function () {
             </div>\
           </div>\
           <div class="text-right">\
-            <span class="badge ' + Utils.getStageBadgeClass(company.entryStage) + '" style="margin-bottom: 4px;">' + company.entryStage + '</span>\
-            <div style="font-weight: 600; color: var(--color-accent-tertiary); font-size: 12px;">' + Utils.formatCurrency(company.initialInvestment) + '</div>\
+            <span class="badge ' + Utils.getStageBadgeClass(company.currentStage) + '" style="margin-bottom: 4px;">' + company.currentStage + '</span>\
+            <div style="font-weight: 600; color: var(--color-accent-tertiary); font-size: 12px;">' + Utils.formatCurrency(company.totalInvested) + '</div>\
           </div>\
         </div>';
     }).join('');
