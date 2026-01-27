@@ -184,7 +184,6 @@ FamilyOffice.Supabase = (function () {
                         legalRights: row.legal_rights || {},
                         followOns: row.follow_ons || [],
                         founderIds: row.founder_ids || [],
-                        lastInvestmentDate: row.last_investment_date,
                         createdAt: row.created_at
                     };
                 });
@@ -216,7 +215,6 @@ FamilyOffice.Supabase = (function () {
             legal_rights: company.legalRights || {},
             follow_ons: company.followOns || [],
             founder_ids: company.founderIds || [],
-            last_investment_date: company.lastInvestmentDate,
             updated_at: new Date().toISOString()
         };
 

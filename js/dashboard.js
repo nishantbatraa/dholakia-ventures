@@ -90,19 +90,28 @@ FamilyOffice.Dashboard = (function () {
     var companies = Data.getCompanies();
     var widgets = getWidgetPreferences();
 
+    // Helper function to get the latest investment date for a company
+    function getLatestInvestmentDate(company) {
+      var latestDate = company.entryDate || '';
+      // Check all follow-on rounds for a more recent date
+      if (company.followOns && company.followOns.length > 0) {
+        company.followOns.forEach(function (fo) {
+          if (fo.date && fo.date > latestDate) {
+            latestDate = fo.date;
+          }
+        });
+      }
+      return latestDate;
+    }
+
     // Recent investments - sorted by latest investment date/time
     var recentInvestments = companies
       .filter(function (c) { return c.status === 'Active'; })
       .sort(function (a, b) {
-        // Primary sort: lastInvestmentDate (most recent first)
-        var dateA = a.lastInvestmentDate || a.entryDate || '';
-        var dateB = b.lastInvestmentDate || b.entryDate || '';
-        var dateDiff = new Date(dateB) - new Date(dateA);
-        if (dateDiff !== 0) return dateDiff;
-        // Secondary sort: createdAt timestamp for same-date entries
-        var createdA = a.createdAt || '';
-        var createdB = b.createdAt || '';
-        return new Date(createdB) - new Date(createdA);
+        // Calculate latest date from entry_date and follow_ons
+        var dateA = getLatestInvestmentDate(a);
+        var dateB = getLatestInvestmentDate(b);
+        return new Date(dateB) - new Date(dateA);
       })
       .slice(0, 5);
 
@@ -140,8 +149,9 @@ FamilyOffice.Dashboard = (function () {
     // Build recent investments HTML
     var recentHtml = recentInvestments.map(function (company) {
       var avatarColor = Utils.getAvatarColor(company.name);
-      // Show lastInvestmentDate (most recent activity), fallback to entryDate
-      var investmentDate = new Date(company.lastInvestmentDate || company.entryDate);
+      // Calculate latest investment date from entry_date and follow_ons
+      var latestDate = getLatestInvestmentDate(company);
+      var investmentDate = new Date(latestDate);
       var monthYear = investmentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       // Show current stage (not entry stage) and total invested (not just initial)
       return '\
