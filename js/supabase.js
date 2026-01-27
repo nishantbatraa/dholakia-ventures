@@ -159,7 +159,7 @@ FamilyOffice.Supabase = (function () {
         return supabase
             .from('companies')
             .select('*')
-            .order('created_at', { ascending: false })
+            .order('entry_date', { ascending: false })
             .then(function (result) {
                 if (result.error) throw result.error;
                 return result.data.map(function (row) {
