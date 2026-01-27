@@ -15,49 +15,12 @@ var FamilyOffice = FamilyOffice || {};
     var Funds = FamilyOffice.Funds;
     var Legal = FamilyOffice.Legal;
     var Utils = FamilyOffice.Utils;
-    var Auth = FamilyOffice.Auth;
 
     var currentPage = 'dashboard';
-    var wasSignedOut = false; // Track if user was signed out when app started
 
     function init() {
-        // Check authentication first
-        Auth.init().then(function (session) {
-            if (!session || !session.user) {
-                // Not authenticated - show login page
-                wasSignedOut = true; // Mark that we started in signed-out state
-                showLoginPage();
-                return;
-            }
-
-            // User is authenticated - proceed with app
-            initApp();
-        }).catch(function (err) {
-            console.error('Auth init error:', err);
-            // If auth fails, show login page
-            wasSignedOut = true;
-            showLoginPage();
-        });
-
-        // Listen for auth state changes
-        // TEMPORARILY DISABLED: Commenting out reload logic to prevent crash
-        Auth.onAuthStateChange(function (event, session) {
-            console.log('Auth event:', event, 'session:', session ? 'exists' : 'null');
-
-            // For now, just log events - don't reload anything
-            if (event === 'SIGNED_OUT') {
-                wasSignedOut = true;
-                showLoginPage();
-            }
-            // Reload disabled to prevent loop - user must refresh manually after login
-        });
-    }
-
-    function showLoginPage() {
-        var appContainer = document.getElementById('app-container');
-        if (appContainer) {
-            appContainer.innerHTML = Auth.renderLoginPage();
-        }
+        // Initialize app directly without auth
+        initApp();
     }
 
     function initApp() {
@@ -214,16 +177,6 @@ var FamilyOffice = FamilyOffice || {};
             if (e.target.id === 'currency-usd' || e.target.closest('#currency-usd')) {
                 Utils.setCurrency('USD');
                 refresh();
-            }
-            // Logout button
-            if (e.target.id === 'logout-btn' || e.target.closest('#logout-btn')) {
-                e.preventDefault();
-                Auth.signOut().then(function () {
-                    showLoginPage();
-                }).catch(function (err) {
-                    console.error('Logout error:', err);
-                    alert('Failed to logout: ' + err.message);
-                });
             }
         });
     }

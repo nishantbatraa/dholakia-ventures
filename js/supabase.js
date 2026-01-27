@@ -23,7 +23,6 @@ FamilyOffice.Supabase = (function () {
     function init() {
         if (window.supabase && window.supabase.createClient) {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            // Store to global for sharing with auth.js (avoids multiple client instances)
             window._supabaseClient = supabase;
             // Check if sync was previously enabled
             syncEnabled = localStorage.getItem('dv_cloud_sync_enabled') === 'true';
@@ -35,7 +34,7 @@ FamilyOffice.Supabase = (function () {
         }
     }
 
-    // Get the Supabase client instance (for sharing with other modules like auth.js)
+    // Get the Supabase client instance
     function getClient() {
         if (!supabase) init();
         return supabase;
