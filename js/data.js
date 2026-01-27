@@ -606,23 +606,11 @@ FamilyOffice.Data = (function () {
     }
   }
 
-  // Auto-sync helper - triggers cloud sync after data changes
+  // Legacy auto-sync helper - now a no-op since we're cloud-first
+  // CRUD operations handle their own cloud syncing directly
   function triggerAutoSync(operation, dataType) {
-    var Supabase = FamilyOffice.Supabase;
-    if (Supabase && Supabase.isSyncEnabled && Supabase.isSyncEnabled()) {
-      // Update sidebar indicator
-      updateSyncIndicator('syncing');
-
-      // Auto-push to cloud
-      Supabase.pushToCloud()
-        .then(function () {
-          updateSyncIndicator('synced');
-        })
-        .catch(function (err) {
-          updateSyncIndicator('error');
-          console.error('❌ Auto-sync failed:', err);
-        });
-    }
+    // No-op: Cloud-first architecture means CRUD operations sync directly
+    // This function is kept for backward compatibility with custom options
   }
 
   // Update the sidebar sync indicator
@@ -644,6 +632,10 @@ FamilyOffice.Data = (function () {
     } else if (status === 'error') {
       if (statusIcon) statusIcon.textContent = '⚠️';
       if (statusText) statusText.textContent = 'Sync error';
+      indicator.classList.remove('syncing');
+    } else if (status === 'pending') {
+      if (statusIcon) statusIcon.textContent = '⏳';
+      if (statusText) statusText.textContent = 'Pending...';
       indicator.classList.remove('syncing');
     }
   }
@@ -720,6 +712,7 @@ FamilyOffice.Data = (function () {
     return null;
   }
 
+  // Cloud-first: Save to Supabase first, then update localStorage cache
   function addCompany(company) {
     var companies = getCompanies();
 
@@ -736,35 +729,77 @@ FamilyOffice.Data = (function () {
       followOns: company.followOns || [],
       totalInvested: company.initialInvestment + (company.followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0)
     });
-    companies.push(newCompany);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
-    triggerAutoSync('added', 'company');
-    return newCompany;
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveCompanyToCloud(newCompany)
+      .then(function () {
+        companies.push(newCompany);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+        updateSyncIndicator('synced');
+        return { success: true, company: newCompany };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to save company to cloud:', err);
+        return { success: false, error: err.message || 'Failed to save to cloud' };
+      });
   }
 
   function updateCompany(id, updates) {
     var companies = getCompanies();
+    var updatedCompany = null;
+    var companyIndex = -1;
+
     for (var i = 0; i < companies.length; i++) {
       if (companies[i].id === id) {
-        companies[i] = Object.assign({}, companies[i], updates);
+        companyIndex = i;
+        updatedCompany = Object.assign({}, companies[i], updates);
         if (updates.initialInvestment || updates.followOns) {
-          companies[i].totalInvested =
-            companies[i].initialInvestment +
-            (companies[i].followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0);
+          updatedCompany.totalInvested =
+            updatedCompany.initialInvestment +
+            (updatedCompany.followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0);
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
-        triggerAutoSync('updated', 'company');
-        return companies[i];
+        break;
       }
     }
-    return null;
+
+    if (!updatedCompany) {
+      return Promise.resolve({ success: false, error: 'Company not found' });
+    }
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveCompanyToCloud(updatedCompany)
+      .then(function () {
+        companies[companyIndex] = updatedCompany;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+        updateSyncIndicator('synced');
+        return { success: true, company: updatedCompany };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to update company in cloud:', err);
+        return { success: false, error: err.message || 'Failed to update in cloud' };
+      });
   }
 
   function deleteCompany(id) {
-    var companies = getCompanies();
-    var filtered = companies.filter(function (c) { return c.id !== id; });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    triggerAutoSync('deleted', 'company');
+    // Cloud-first: delete from Supabase, then remove from cache
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.deleteCompanyFromCloud(id)
+      .then(function () {
+        var companies = getCompanies();
+        var filtered = companies.filter(function (c) { return c.id !== id; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+        updateSyncIndicator('synced');
+        return { success: true };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to delete company from cloud:', err);
+        return { success: false, error: err.message || 'Failed to delete from cloud' };
+      });
   }
 
   function getPortfolioMetrics() {
@@ -923,44 +958,86 @@ FamilyOffice.Data = (function () {
       companyIds: founder.companyIds || [],
       createdAt: new Date().toISOString()
     });
-    founders.push(newFounder);
-    localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
-    triggerAutoSync('added', 'founder');
-    return newFounder;
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveFounderToCloud(newFounder)
+      .then(function () {
+        founders.push(newFounder);
+        localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
+        updateSyncIndicator('synced');
+        return { success: true, founder: newFounder };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to save founder to cloud:', err);
+        return { success: false, error: err.message || 'Failed to save to cloud' };
+      });
   }
 
   function updateFounder(id, updates) {
     var founders = getFounders();
+    var updatedFounder = null;
+    var founderIndex = -1;
+
     for (var i = 0; i < founders.length; i++) {
       if (founders[i].id === id) {
-        founders[i] = Object.assign({}, founders[i], updates);
-        founders[i].updatedAt = new Date().toISOString();
-        localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
-        triggerAutoSync('updated', 'founder');
-        return founders[i];
+        founderIndex = i;
+        updatedFounder = Object.assign({}, founders[i], updates);
+        updatedFounder.updatedAt = new Date().toISOString();
+        break;
       }
     }
-    return null;
+
+    if (!updatedFounder) {
+      return Promise.resolve({ success: false, error: 'Founder not found' });
+    }
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveFounderToCloud(updatedFounder)
+      .then(function () {
+        founders[founderIndex] = updatedFounder;
+        localStorage.setItem(FOUNDERS_KEY, JSON.stringify(founders));
+        updateSyncIndicator('synced');
+        return { success: true, founder: updatedFounder };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to update founder in cloud:', err);
+        return { success: false, error: err.message || 'Failed to update in cloud' };
+      });
   }
 
   function deleteFounder(id) {
-    var founders = getFounders();
-    var filtered = founders.filter(function (f) { return f.id !== id; });
-    localStorage.setItem(FOUNDERS_KEY, JSON.stringify(filtered));
+    // Cloud-first: delete from Supabase, then remove from cache
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.deleteFounderFromCloud(id)
+      .then(function () {
+        var founders = getFounders();
+        var filtered = founders.filter(function (f) { return f.id !== id; });
+        localStorage.setItem(FOUNDERS_KEY, JSON.stringify(filtered));
 
-    // Also remove founder from any companies that reference them
-    var companies = getCompanies();
-    var needsSave = false;
-    companies.forEach(function (c) {
-      if (c.founderIds && c.founderIds.indexOf(id) !== -1) {
-        c.founderIds = c.founderIds.filter(function (fid) { return fid !== id; });
-        needsSave = true;
-      }
-    });
-    if (needsSave) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
-    }
-    triggerAutoSync('deleted', 'founder');
+        // Also remove founder from any companies that reference them
+        var companies = getCompanies();
+        var needsSave = false;
+        companies.forEach(function (c) {
+          if (c.founderIds && c.founderIds.indexOf(id) !== -1) {
+            c.founderIds = c.founderIds.filter(function (fid) { return fid !== id; });
+            needsSave = true;
+          }
+        });
+        if (needsSave) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+        }
+        updateSyncIndicator('synced');
+        return { success: true };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to delete founder from cloud:', err);
+        return { success: false, error: err.message || 'Failed to delete from cloud' };
+      });
   }
 
   // Get all founders linked to a specific company
@@ -1062,31 +1139,73 @@ FamilyOffice.Data = (function () {
       navHistory: fund.navHistory || [],
       createdAt: new Date().toISOString()
     });
-    funds.push(newFund);
-    localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
-    triggerAutoSync('added', 'fund');
-    return newFund;
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveFundToCloud(newFund)
+      .then(function () {
+        funds.push(newFund);
+        localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
+        updateSyncIndicator('synced');
+        return { success: true, fund: newFund };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to save fund to cloud:', err);
+        return { success: false, error: err.message || 'Failed to save to cloud' };
+      });
   }
 
   function updateFund(id, updates) {
     var funds = getFunds();
+    var updatedFund = null;
+    var fundIndex = -1;
+
     for (var i = 0; i < funds.length; i++) {
       if (funds[i].id === id) {
-        funds[i] = Object.assign({}, funds[i], updates);
-        funds[i].updatedAt = new Date().toISOString();
-        localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
-        triggerAutoSync('updated', 'fund');
-        return funds[i];
+        fundIndex = i;
+        updatedFund = Object.assign({}, funds[i], updates);
+        updatedFund.updatedAt = new Date().toISOString();
+        break;
       }
     }
-    return null;
+
+    if (!updatedFund) {
+      return Promise.resolve({ success: false, error: 'Fund not found' });
+    }
+
+    // Cloud-first: save to Supabase, then cache locally
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.saveFundToCloud(updatedFund)
+      .then(function () {
+        funds[fundIndex] = updatedFund;
+        localStorage.setItem(FUNDS_KEY, JSON.stringify(funds));
+        updateSyncIndicator('synced');
+        return { success: true, fund: updatedFund };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to update fund in cloud:', err);
+        return { success: false, error: err.message || 'Failed to update in cloud' };
+      });
   }
 
   function deleteFund(id) {
-    var funds = getFunds();
-    var filtered = funds.filter(function (f) { return f.id !== id; });
-    localStorage.setItem(FUNDS_KEY, JSON.stringify(filtered));
-    triggerAutoSync('deleted', 'fund');
+    // Cloud-first: delete from Supabase, then remove from cache
+    updateSyncIndicator('syncing');
+    return FamilyOffice.Supabase.deleteFundFromCloud(id)
+      .then(function () {
+        var funds = getFunds();
+        var filtered = funds.filter(function (f) { return f.id !== id; });
+        localStorage.setItem(FUNDS_KEY, JSON.stringify(filtered));
+        updateSyncIndicator('synced');
+        return { success: true };
+      })
+      .catch(function (err) {
+        updateSyncIndicator('error');
+        console.error('Failed to delete fund from cloud:', err);
+        return { success: false, error: err.message || 'Failed to delete from cloud' };
+      });
   }
 
   // Fund helper functions

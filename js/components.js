@@ -1207,7 +1207,6 @@ FamilyOffice.Components = (function () {
 
     // Cloud Sync Section
     var Supabase = FamilyOffice.Supabase;
-    var syncEnabled = Supabase && Supabase.isSyncEnabled ? Supabase.isSyncEnabled() : false;
     var lastSync = Supabase && Supabase.getLastSyncTime ? Supabase.getLastSyncTime() : null;
     var lastSyncText = lastSync ? new Date(lastSync).toLocaleString() : 'Never';
 
@@ -1215,25 +1214,16 @@ FamilyOffice.Components = (function () {
       <div class="settings-section">\
         <div class="settings-section-header">\
           <h3 class="settings-section-title">☁️ Cloud Sync</h3>\
-          <span class="badge" style="background: ' + (syncEnabled ? 'rgba(16, 185, 129, 0.15); color: #10b981;' : 'rgba(107, 114, 128, 0.15); color: #9ca3af;') + '">' + (syncEnabled ? '● Enabled' : '○ Disabled') + '</span>\
+          <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">● Active</span>\
         </div>\
         <div class="settings-section-content">\
-          <p class="settings-description">Sync your portfolio data to Supabase cloud. Access from any device and share with your team.</p>\
+          <p class="settings-description">Your data is automatically synced to Supabase cloud. All changes are saved instantly.</p>\
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px; background: var(--color-bg-tertiary); border-radius: var(--radius-md);">\
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">\
-              <input type="checkbox" id="cloud-sync-toggle" ' + (syncEnabled ? 'checked' : '') + ' style="width: 18px; height: 18px;">\
-              <span style="font-weight: 500;">Enable Cloud Sync</span>\
-            </label>\
+            <span style="font-weight: 500; color: #10b981;">✓ Cloud-first mode enabled</span>\
             <span class="text-sm text-muted" style="margin-left: auto;">Last sync: ' + lastSyncText + '</span>\
           </div>\
           <div id="sync-status" style="display: none; margin-bottom: 12px; padding: 10px; border-radius: var(--radius-md);"></div>\
           <div class="settings-actions">\
-            <button class="btn btn-secondary" id="push-to-cloud-btn" ' + (syncEnabled ? '' : 'disabled') + '>\
-              <span class="btn-icon">⬆️</span> Push to Cloud\
-            </button>\
-            <button class="btn btn-secondary" id="pull-from-cloud-btn" ' + (syncEnabled ? '' : 'disabled') + '>\
-              <span class="btn-icon">⬇️</span> Pull from Cloud\
-            </button>\
             <button class="btn btn-ghost" id="check-connection-btn">\
               <span class="btn-icon">🔌</span> Test Connection\
             </button>\

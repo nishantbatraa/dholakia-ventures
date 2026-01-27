@@ -525,15 +525,16 @@ FamilyOffice.Legal = (function () {
       }
     }
 
-    Data.updateCompany(companyId, company);
-    window.tempLegalDocs = [];
+    Data.updateCompany(companyId, company).then(function(result) {
+      window.tempLegalDocs = [];
 
-    // Re-open company modal to show updated data
-    var modalContainer = document.getElementById('modal-container');
-    modalContainer.innerHTML = renderCompanyLegalModal(company);
+      // Re-open company modal to show updated data
+      var modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = renderCompanyLegalModal(company);
 
-    // Refresh the legal page in background
-    document.getElementById('page-content').innerHTML = render();
+      // Refresh the legal page in background
+      document.getElementById('page-content').innerHTML = render();
+    });
   }
 
   return {

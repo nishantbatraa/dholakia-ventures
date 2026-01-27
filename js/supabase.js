@@ -235,8 +235,13 @@ FamilyOffice.Supabase = (function () {
             .from('companies')
             .delete()
             .eq('id', id)
+            .select()
             .then(function (result) {
                 if (result.error) throw result.error;
+                console.log('☁️ Delete result for company', id, ':', result.data);
+                if (!result.data || result.data.length === 0) {
+                    console.warn('☁️ No rows deleted - company may not exist or RLS blocked deletion');
+                }
                 updateSyncTime();
                 return { success: true };
             });
@@ -382,6 +387,46 @@ FamilyOffice.Supabase = (function () {
             });
     }
 
+    // --- ID FETCHERS (for sync deletion comparison) ---
+    function getCompanyIdsFromCloud() {
+        if (!supabase) init();
+        if (!supabase) return Promise.reject('Supabase not initialized');
+
+        return supabase
+            .from('companies')
+            .select('id')
+            .then(function (result) {
+                if (result.error) throw result.error;
+                return result.data.map(function (row) { return row.id; });
+            });
+    }
+
+    function getFounderIdsFromCloud() {
+        if (!supabase) init();
+        if (!supabase) return Promise.reject('Supabase not initialized');
+
+        return supabase
+            .from('founders')
+            .select('id')
+            .then(function (result) {
+                if (result.error) throw result.error;
+                return result.data.map(function (row) { return row.id; });
+            });
+    }
+
+    function getFundIdsFromCloud() {
+        if (!supabase) init();
+        if (!supabase) return Promise.reject('Supabase not initialized');
+
+        return supabase
+            .from('funds')
+            .select('id')
+            .then(function (result) {
+                if (result.error) throw result.error;
+                return result.data.map(function (row) { return row.id; });
+            });
+    }
+
     // ============================================
     // REALTIME SUBSCRIPTIONS
     // ============================================
@@ -507,6 +552,7 @@ FamilyOffice.Supabase = (function () {
         if (!supabase) init();
         if (!supabase) return Promise.reject('Supabase not initialized');
 
+        console.log('☁️ pullFromCloud: Fetching data from Supabase...');
         return Promise.all([
             getCompaniesFromCloud(),
             getFoundersFromCloud(),
@@ -516,16 +562,14 @@ FamilyOffice.Supabase = (function () {
             var founders = results[1];
             var funds = results[2];
 
-            // Save to localStorage
-            if (companies.length > 0) {
-                localStorage.setItem('family_office_portfolio', JSON.stringify(companies));
-            }
-            if (founders.length > 0) {
-                localStorage.setItem('family_office_founders', JSON.stringify(founders));
-            }
-            if (funds.length > 0) {
-                localStorage.setItem('family_office_funds', JSON.stringify(funds));
-            }
+            console.log('☁️ pullFromCloud: Got', companies.length, 'companies from cloud');
+            console.log('☁️ pullFromCloud: Company names:', companies.map(function(c) { return c.name; }));
+
+            // Save to localStorage (always overwrite with cloud data)
+            localStorage.setItem('family_office_portfolio', JSON.stringify(companies));
+            localStorage.setItem('family_office_founders', JSON.stringify(founders));
+            localStorage.setItem('family_office_funds', JSON.stringify(funds));
+            console.log('☁️ pullFromCloud: Saved to localStorage');
 
             updateSyncTime();
 
@@ -538,7 +582,7 @@ FamilyOffice.Supabase = (function () {
         });
     }
 
-    // Full sync: Push all local data to cloud
+    // Full sync: Push all local data to cloud (including deletions)
     function pushToCloud() {
         if (!supabase) init();
         if (!supabase) return Promise.reject('Supabase not initialized');
@@ -547,26 +591,91 @@ FamilyOffice.Supabase = (function () {
         var founders = JSON.parse(localStorage.getItem('family_office_founders') || '[]');
         var funds = JSON.parse(localStorage.getItem('family_office_funds') || '[]');
 
-        var promises = [];
+        // Get local IDs
+        var localCompanyIds = companies.map(function (c) { return c.id; });
+        var localFounderIds = founders.map(function (f) { return f.id; });
+        var localFundIds = funds.map(function (f) { return f.id; });
 
-        companies.forEach(function (c) {
-            promises.push(saveCompanyToCloud(c));
-        });
-        founders.forEach(function (f) {
-            promises.push(saveFounderToCloud(f));
-        });
-        funds.forEach(function (f) {
-            promises.push(saveFundToCloud(f));
-        });
+        // First, fetch current cloud IDs to determine what needs deletion
+        return Promise.all([
+            getCompanyIdsFromCloud(),
+            getFounderIdsFromCloud(),
+            getFundIdsFromCloud()
+        ]).then(function (cloudIds) {
+            var cloudCompanyIds = cloudIds[0];
+            var cloudFounderIds = cloudIds[1];
+            var cloudFundIds = cloudIds[2];
 
-        return Promise.all(promises).then(function () {
-            updateSyncTime();
-            return {
-                success: true,
-                companies: companies.length,
-                founders: founders.length,
-                funds: funds.length
-            };
+            // Find IDs to delete (exist in cloud but not locally)
+            var companyIdsToDelete = cloudCompanyIds.filter(function (id) {
+                return localCompanyIds.indexOf(id) === -1;
+            });
+            var founderIdsToDelete = cloudFounderIds.filter(function (id) {
+                return localFounderIds.indexOf(id) === -1;
+            });
+            var fundIdsToDelete = cloudFundIds.filter(function (id) {
+                return localFundIds.indexOf(id) === -1;
+            });
+
+            // Safety check: Don't delete everything if local is empty but cloud has data
+            var hasLocalData = companies.length > 0 || founders.length > 0 || funds.length > 0;
+            var hasCloudData = cloudCompanyIds.length > 0 || cloudFounderIds.length > 0 || cloudFundIds.length > 0;
+
+            if (!hasLocalData && hasCloudData) {
+                console.warn('⚠️ Skipping cloud deletions: local data is empty but cloud has data');
+                companyIdsToDelete = [];
+                founderIdsToDelete = [];
+                fundIdsToDelete = [];
+            }
+
+            // Build all operations (upserts + deletions)
+            var promises = [];
+
+            // Upsert all local items
+            companies.forEach(function (c) {
+                promises.push(saveCompanyToCloud(c));
+            });
+            founders.forEach(function (f) {
+                promises.push(saveFounderToCloud(f));
+            });
+            funds.forEach(function (f) {
+                promises.push(saveFundToCloud(f));
+            });
+
+            // Delete items that no longer exist locally
+            companyIdsToDelete.forEach(function (id) {
+                promises.push(deleteCompanyFromCloud(id).catch(function (err) {
+                    console.error('Failed to delete company from cloud:', id, err);
+                    return { deleted: false, id: id };
+                }));
+            });
+            founderIdsToDelete.forEach(function (id) {
+                promises.push(deleteFounderFromCloud(id).catch(function (err) {
+                    console.error('Failed to delete founder from cloud:', id, err);
+                    return { deleted: false, id: id };
+                }));
+            });
+            fundIdsToDelete.forEach(function (id) {
+                promises.push(deleteFundFromCloud(id).catch(function (err) {
+                    console.error('Failed to delete fund from cloud:', id, err);
+                    return { deleted: false, id: id };
+                }));
+            });
+
+            return Promise.all(promises).then(function () {
+                updateSyncTime();
+                return {
+                    success: true,
+                    companies: companies.length,
+                    founders: founders.length,
+                    funds: funds.length,
+                    deleted: {
+                        companies: companyIdsToDelete.length,
+                        founders: founderIdsToDelete.length,
+                        funds: fundIdsToDelete.length
+                    }
+                };
+            });
         });
     }
 

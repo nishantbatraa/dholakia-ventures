@@ -128,7 +128,8 @@ FamilyOffice.CSVImport = (function () {
     // Import companies
     function importCompanies(rows) {
         console.log('[CSV Import] Starting import of', rows.length, 'rows');
-        var imported = 0, skipped = 0;
+        var promises = [];
+        var skipped = 0;
         rows.forEach(function (row, index) {
             if (!row.valid) {
                 console.log('[CSV Import] Skipping row', index, '- invalid:', row.errors);
@@ -137,40 +138,45 @@ FamilyOffice.CSVImport = (function () {
             }
             var d = row.data;
             console.log('[CSV Import] Importing company:', d.name);
-            try {
-                var company = {
-                    name: d.name.trim(),
-                    industry: d.industry.trim(),
-                    hq: d.hq.trim(),
-                    dealSourcer: d.dealSourcer.trim(),
-                    analyst: d.analyst.trim(),
-                    entryDate: d.entryDate.trim(),
-                    entryStage: d.entryStage.trim(),
-                    currentStage: d.currentStage ? d.currentStage.trim() : d.entryStage.trim(),
-                    initialInvestment: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
-                    totalInvested: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
-                    latestValuation: d.latestValuation ? parseFloat(d.latestValuation.replace(/[₹$,]/g, '')) : 0,
-                    ownership: d.ownership ? parseFloat(d.ownership.replace(/%/g, '')) : 0,
-                    status: d.status ? d.status.trim() : 'Active',
-                    notes: d.notes || '',
-                    followOns: []
-                };
-                console.log('[CSV Import] Company object:', company);
-                var result = Data.addCompany(company);
+            var company = {
+                name: d.name.trim(),
+                industry: d.industry.trim(),
+                hq: d.hq.trim(),
+                dealSourcer: d.dealSourcer.trim(),
+                analyst: d.analyst.trim(),
+                entryDate: d.entryDate.trim(),
+                entryStage: d.entryStage.trim(),
+                currentStage: d.currentStage ? d.currentStage.trim() : d.entryStage.trim(),
+                initialInvestment: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
+                totalInvested: parseFloat(d.initialInvestment.replace(/[₹$,]/g, '')) || 0,
+                latestValuation: d.latestValuation ? parseFloat(d.latestValuation.replace(/[₹$,]/g, '')) : 0,
+                ownership: d.ownership ? parseFloat(d.ownership.replace(/%/g, '')) : 0,
+                status: d.status ? d.status.trim() : 'Active',
+                notes: d.notes || '',
+                followOns: []
+            };
+            console.log('[CSV Import] Company object:', company);
+            promises.push(Data.addCompany(company).then(function(result) {
                 console.log('[CSV Import] Added company result:', result);
-                imported++;
-            } catch (e) {
+                return result.success ? 'imported' : 'skipped';
+            }).catch(function(e) {
                 console.error('[CSV Import] Error adding company:', e);
-                skipped++;
-            }
+                return 'skipped';
+            }));
         });
-        console.log('[CSV Import] Import complete. Imported:', imported, 'Skipped:', skipped);
-        return { imported: imported, skipped: skipped };
+        return Promise.all(promises).then(function(results) {
+            var imported = results.filter(function(r) { return r === 'imported'; }).length;
+            var totalSkipped = skipped + results.filter(function(r) { return r === 'skipped'; }).length;
+            console.log('[CSV Import] Import complete. Imported:', imported, 'Skipped:', totalSkipped);
+            return { imported: imported, skipped: totalSkipped };
+        });
     }
 
     // Import follow-on rounds
     function importFollowOns(rows) {
-        var imported = 0, skipped = 0, companies = Data.getCompanies();
+        var promises = [];
+        var skipped = 0;
+        var companies = Data.getCompanies();
         rows.forEach(function (row) {
             if (!row.valid) { skipped++; return; }
             var d = row.data;
@@ -190,10 +196,17 @@ FamilyOffice.CSVImport = (function () {
             if (followOn.roundValuation) company.latestValuation = followOn.roundValuation;
             if (followOn.ownershipAfter !== undefined) company.ownership = followOn.ownershipAfter;
             company.currentStage = followOn.round;
-            Data.updateCompany(company.id, company);
-            imported++;
+            promises.push(Data.updateCompany(company.id, company).then(function(result) {
+                return result.success ? 'imported' : 'skipped';
+            }).catch(function() {
+                return 'skipped';
+            }));
         });
-        return { imported: imported, skipped: skipped };
+        return Promise.all(promises).then(function(results) {
+            var imported = results.filter(function(r) { return r === 'imported'; }).length;
+            var totalSkipped = skipped + results.filter(function(r) { return r === 'skipped'; }).length;
+            return { imported: imported, skipped: totalSkipped };
+        });
     }
 
     // Render modal
@@ -393,7 +406,12 @@ FamilyOffice.CSVImport = (function () {
             var backMappingBtn = document.getElementById('csv-back-mapping-btn');
             var importBtn = document.getElementById('csv-import-btn');
             if (backMappingBtn) backMappingBtn.onclick = function () { showStep('mapping'); };
-            if (importBtn) importBtn.onclick = function () { var res = importMode === 'companies' ? importCompanies(validRows) : importFollowOns(validRows); showStep('result', res); };
+            if (importBtn) importBtn.onclick = function () {
+                importBtn.disabled = true;
+                importBtn.textContent = 'Importing...';
+                var importPromise = importMode === 'companies' ? importCompanies(validRows) : importFollowOns(validRows);
+                importPromise.then(function(res) { showStep('result', res); });
+            };
         }
         if (step === 'result') {
             var doneBtn = document.getElementById('csv-done-btn');

@@ -282,27 +282,27 @@ FamilyOffice.Founders = (function () {
       return;
     }
 
-    var addedCount = 0;
-    names.forEach(function (name) {
+    var promises = names.map(function (name) {
       var founderData = {
         name: name,
         role: defaultRole || 'Founder',
         companyIds: companyId ? [companyId] : []
       };
 
-      var newFounder = Data.addFounder(founderData);
-
-      // Link to company if selected
-      if (companyId) {
-        Data.linkFounderToCompany(newFounder.id, companyId);
-      }
-
-      addedCount++;
+      return Data.addFounder(founderData).then(function(result) {
+        if (result.success && result.founder && companyId) {
+          Data.linkFounderToCompany(result.founder.id, companyId);
+        }
+        return result;
+      });
     });
 
-    closeQuickAddModal();
-    refreshPage();
-    alert('✅ Added ' + addedCount + ' founder' + (addedCount > 1 ? 's' : '') + ' successfully!');
+    Promise.all(promises).then(function(results) {
+      var addedCount = results.filter(function(r) { return r.success; }).length;
+      closeQuickAddModal();
+      refreshPage();
+      alert('Added ' + addedCount + ' founder' + (addedCount > 1 ? 's' : '') + ' successfully!');
+    });
   }
 
   function openAddModal() {
@@ -371,24 +371,40 @@ FamilyOffice.Founders = (function () {
         }
       });
 
-      Data.updateFounder(currentEditId, founderData);
+      Data.updateFounder(currentEditId, founderData).then(function(result) {
+        if (result.success) {
+          closeModal();
+          refreshPage();
+        } else {
+          alert('Failed to save: ' + (result.error || 'Unknown error'));
+        }
+      });
     } else {
-      var newFounder = Data.addFounder(founderData);
-      // Link to selected companies
-      companyIds.forEach(function (cid) {
-        Data.linkFounderToCompany(newFounder.id, cid);
+      Data.addFounder(founderData).then(function(result) {
+        if (result.success && result.founder) {
+          // Link to selected companies
+          companyIds.forEach(function (cid) {
+            Data.linkFounderToCompany(result.founder.id, cid);
+          });
+          closeModal();
+          refreshPage();
+        } else {
+          alert('Failed to save: ' + (result.error || 'Unknown error'));
+        }
       });
     }
-
-    closeModal();
-    refreshPage();
   }
 
   function deleteFounder(founderId) {
     var founder = Data.getFounderById(founderId);
     if (confirm('Are you sure you want to delete "' + founder.name + '"?\n\nThis will remove them from all linked companies.')) {
-      Data.deleteFounder(founderId);
-      refreshPage();
+      Data.deleteFounder(founderId).then(function(result) {
+        if (result.success) {
+          refreshPage();
+        } else {
+          alert('Failed to delete: ' + (result.error || 'Unknown error'));
+        }
+      });
     }
   }
 

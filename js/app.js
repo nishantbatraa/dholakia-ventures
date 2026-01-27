@@ -24,30 +24,55 @@ var FamilyOffice = FamilyOffice || {};
     }
 
     function initApp() {
-        // Initialize data (loads from localStorage first for fast startup)
-        Data.initializeData();
-
         // Check for hash
         if (window.location.hash) {
             currentPage = window.location.hash.slice(1) || 'dashboard';
         }
 
-        // Render initial page (with local data)
-        renderPage(currentPage);
+        // Show loading overlay while fetching from cloud
+        showLoadingOverlay('Connecting to cloud...');
 
-        // Setup navigation
-        setupNavigation();
+        // Cloud-first: Load from Supabase, then cache in localStorage
+        var Supabase = FamilyOffice.Supabase;
+        if (Supabase && Supabase.pullFromCloud) {
+            Supabase.pullFromCloud()
+                .then(function (result) {
+                    hideLoadingOverlay();
+                    console.log('☁️ Loaded from cloud:', result.companies, 'companies,', result.founders, 'founders,', result.funds, 'funds');
 
-        // Setup currency toggle
-        setupCurrencyToggle();
+                    // Render the page with cloud data
+                    renderPage(currentPage);
+                    setupNavigation();
+                    setupCurrencyToggle();
 
-        // Initialize from cloud if sync is enabled (will refresh UI when done)
-        // This happens async so the page loads fast with local data first
-        Data.initializeFromCloud(function (result) {
-            if (result.success && result.source === 'cloud') {
-                console.log('☁️ Cloud sync complete - data refreshed');
-            }
-        });
+                    // Subscribe to realtime updates
+                    if (Supabase.subscribeToRealtime) {
+                        Supabase.subscribeToRealtime();
+                        Supabase.onRealtimeChange(function (table, payload) {
+                            console.log('⚡ Realtime update:', table);
+                            renderPage(currentPage);
+                        });
+                    }
+                })
+                .catch(function (err) {
+                    hideLoadingOverlay();
+                    console.warn('☁️ Cloud unavailable, using cached data:', err);
+                    showNotification('Using cached data - cloud unavailable', 'warning');
+
+                    // Fall back to localStorage
+                    Data.initializeData();
+                    renderPage(currentPage);
+                    setupNavigation();
+                    setupCurrencyToggle();
+                });
+        } else {
+            // Supabase not available, use localStorage
+            hideLoadingOverlay();
+            Data.initializeData();
+            renderPage(currentPage);
+            setupNavigation();
+            setupCurrencyToggle();
+        }
 
         // Handle browser back/forward
         window.addEventListener('popstate', function () {
@@ -57,6 +82,34 @@ var FamilyOffice = FamilyOffice || {};
                 renderPage(currentPage);
             }
         });
+    }
+
+    function showLoadingOverlay(message) {
+        var overlay = document.getElementById('loading-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'loading-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,5,8,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;';
+            overlay.innerHTML = '<div style="text-align:center;color:#f8fafc;"><div style="font-size:24px;margin-bottom:16px;">⟳</div><div>' + (message || 'Loading...') + '</div></div>';
+            document.body.appendChild(overlay);
+        }
+    }
+
+    function hideLoadingOverlay() {
+        var overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    function showNotification(message, type) {
+        var notification = document.createElement('div');
+        notification.className = 'notification notification-' + type;
+        notification.style.cssText = 'position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;z-index:9999;color:#fff;font-size:14px;max-width:300px;' +
+            (type === 'warning' ? 'background:#d97706;' : type === 'error' ? 'background:#dc2626;' : 'background:#059669;');
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(function () { notification.remove(); }, 4000);
     }
 
     // Refresh current page (used when currency changes)

@@ -403,12 +403,12 @@ FamilyOffice.Portfolio = (function () {
                     }
                 }
 
-                Data.updateCompany(companyId, company);
-                window.tempLegalDocs = [];
-                modalContainer.innerHTML = '';
-
-                // Refresh the detail modal
-                openCompanyDetail(companyId);
+                Data.updateCompany(companyId, company).then(function(result) {
+                    window.tempLegalDocs = [];
+                    modalContainer.innerHTML = '';
+                    // Refresh the detail modal
+                    openCompanyDetail(companyId);
+                });
             }
         });
 
@@ -549,16 +549,17 @@ FamilyOffice.Portfolio = (function () {
                 var name = inputEl.value.trim();
                 if (name) {
                     // Create founder with just name
-                    var newFounder = Data.addFounder({ name: name, role: 'Founder' });
-                    if (newFounder) {
-                        // Refresh the founders section only
-                        refreshModalForm();
-                        // Check the new founder checkbox after refresh
-                        setTimeout(function () {
-                            var checkbox = document.querySelector('[name="founderIds"][value="' + newFounder.id + '"]');
-                            if (checkbox) checkbox.checked = true;
-                        }, 50);
-                    }
+                    Data.addFounder({ name: name, role: 'Founder' }).then(function(result) {
+                        if (result.success && result.founder) {
+                            // Refresh the founders section only
+                            refreshModalForm();
+                            // Check the new founder checkbox after refresh
+                            setTimeout(function () {
+                                var checkbox = document.querySelector('[name="founderIds"][value="' + result.founder.id + '"]');
+                                if (checkbox) checkbox.checked = true;
+                            }, 50);
+                        }
+                    });
                     inputEl.value = '';
                 } else {
                     inputEl.focus();
@@ -1037,9 +1038,15 @@ FamilyOffice.Portfolio = (function () {
 
     function confirmDelete() {
         if (deleteId) {
-            Data.deleteCompany(deleteId);
-            closeConfirm();
-            refreshContent();
+            Data.deleteCompany(deleteId).then(function(result) {
+                if (result.success) {
+                    closeConfirm();
+                    refreshContent();
+                } else {
+                    closeConfirm();
+                    alert('Failed to delete: ' + (result.error || 'Unknown error'));
+                }
+            });
         }
     }
 
@@ -1102,7 +1109,6 @@ FamilyOffice.Portfolio = (function () {
         });
         data.founderIds = newFounderIds;
 
-        var savedCompany;
         if (currentEditId) {
             // Get old founder IDs for unlinking
             var oldCompany = Data.getCompanyById(currentEditId);
@@ -1122,17 +1128,28 @@ FamilyOffice.Portfolio = (function () {
                 }
             });
 
-            savedCompany = Data.updateCompany(currentEditId, data);
+            Data.updateCompany(currentEditId, data).then(function(result) {
+                if (result.success) {
+                    closeModal();
+                    refreshContent();
+                } else {
+                    alert('Failed to save: ' + (result.error || 'Unknown error'));
+                }
+            });
         } else {
-            savedCompany = Data.addCompany(data);
-            // Link founders to new company
-            newFounderIds.forEach(function (fid) {
-                Data.linkFounderToCompany(fid, savedCompany.id);
+            Data.addCompany(data).then(function(result) {
+                if (result.success) {
+                    // Link founders to new company
+                    newFounderIds.forEach(function (fid) {
+                        Data.linkFounderToCompany(fid, result.company.id);
+                    });
+                    closeModal();
+                    refreshContent();
+                } else {
+                    alert('Failed to save: ' + (result.error || 'Unknown error'));
+                }
             });
         }
-
-        closeModal();
-        refreshContent();
     }
 
     function resetFilters() {

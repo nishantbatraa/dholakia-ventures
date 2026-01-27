@@ -350,19 +350,35 @@ FamilyOffice.Funds = (function () {
     };
 
     if (currentEditId) {
-      Data.updateFund(currentEditId, data);
+      Data.updateFund(currentEditId, data).then(function(result) {
+        if (result.success) {
+          closeModal();
+          refreshPage();
+        } else {
+          alert('Failed to save: ' + (result.error || 'Unknown error'));
+        }
+      });
     } else {
-      Data.addFund(data);
+      Data.addFund(data).then(function(result) {
+        if (result.success) {
+          closeModal();
+          refreshPage();
+        } else {
+          alert('Failed to save: ' + (result.error || 'Unknown error'));
+        }
+      });
     }
-
-    closeModal();
-    refreshPage();
   }
 
   function deleteFund(fundId) {
     if (confirm('Are you sure you want to delete this fund?')) {
-      Data.deleteFund(fundId);
-      refreshPage();
+      Data.deleteFund(fundId).then(function(result) {
+        if (result.success) {
+          refreshPage();
+        } else {
+          alert('Failed to delete: ' + (result.error || 'Unknown error'));
+        }
+      });
     }
   }
 
