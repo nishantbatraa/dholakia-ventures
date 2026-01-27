@@ -315,7 +315,7 @@ FamilyOffice.Components = (function () {
             <div class="text-sm">\
               ' + (didInvest && investmentAmount > 0 ? '<span style="color: var(--color-accent-tertiary); font-weight: 500;">' + Utils.formatCurrency(investmentAmount) + '</span>' : '') + '\
               ' + (f.roundValuation ? '<span class="text-muted"> • Val: ' + Utils.formatCurrency(f.roundValuation) + '</span>' : '') + '\
-              ' + (f.ownershipAfter !== undefined ? '<span class="text-muted"> • Own: ' + f.ownershipAfter.toFixed(1) + '%</span>' : '') + '\
+              ' + (f.ownershipAfter !== undefined ? '<span class="text-muted"> • Own: ' + f.ownershipAfter.toFixed(2) + '%</span>' : '') + '\
             </div>\
           </div>\
           <div style="display: flex; gap: 4px;">\

@@ -32,29 +32,29 @@ FamilyOffice.Utils = (function () {
         if (currency === 'INR') {
             // Values are already in INR - no conversion needed
             if (amount >= 10000000) { // 1 Crore
-                return '₹' + (amount / 10000000).toFixed(1) + ' Cr';
+                return '₹' + (amount / 10000000).toFixed(2) + ' Cr';
             }
             if (amount >= 100000) { // 1 Lakh
-                return '₹' + (amount / 100000).toFixed(1) + ' L';
+                return '₹' + (amount / 100000).toFixed(2) + ' L';
             }
             if (amount >= 1000) {
-                return '₹' + (amount / 1000).toFixed(0) + 'K';
+                return '₹' + (amount / 1000).toFixed(2) + 'K';
             }
-            return '₹' + amount.toFixed(0);
+            return '₹' + amount.toFixed(2);
         }
 
         // USD format - convert from INR to USD
         var usdAmount = amount / 83;
         if (usdAmount >= 1000000000) {
-            return '$' + (usdAmount / 1000000000).toFixed(1) + 'B';
+            return '$' + (usdAmount / 1000000000).toFixed(2) + 'B';
         }
         if (usdAmount >= 1000000) {
-            return '$' + (usdAmount / 1000000).toFixed(1) + 'M';
+            return '$' + (usdAmount / 1000000).toFixed(2) + 'M';
         }
         if (usdAmount >= 1000) {
-            return '$' + (usdAmount / 1000).toFixed(0) + 'K';
+            return '$' + (usdAmount / 1000).toFixed(2) + 'K';
         }
-        return '$' + usdAmount.toFixed(0);
+        return '$' + usdAmount.toFixed(2);
     }
 
     // Format date
@@ -70,7 +70,7 @@ FamilyOffice.Utils = (function () {
 
     // Format percentage
     function formatPercent(value) {
-        return value.toFixed(3) + '%';
+        return value.toFixed(2) + '%';
     }
 
     // Format MOIC
@@ -319,7 +319,7 @@ FamilyOffice.Utils = (function () {
      */
     function formatXIRR(xirr) {
         if (xirr === null || isNaN(xirr)) return 'N/A';
-        return (xirr * 100).toFixed(1) + '%';
+        return (xirr * 100).toFixed(2) + '%';
     }
 
     /**

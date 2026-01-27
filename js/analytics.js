@@ -1198,7 +1198,7 @@ FamilyOffice.Analytics = (function () {
         </div>\
         <div class="card" style="padding: var(--space-4); text-align: center;">\
           <div class="text-xs text-muted mb-2">Participation Rate</div>\
-          <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-accent-primary);">' + stats.participationRate.toFixed(1) + '%</div>\
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-accent-primary);">' + stats.participationRate.toFixed(2) + '%</div>\
         </div>\
       </div>\
       <div class="card mb-6" style="padding: var(--space-4); text-align: center;">\
@@ -1457,8 +1457,8 @@ FamilyOffice.Analytics = (function () {
     });
 
     var totalInvested = indiaData.invested + intlData.invested;
-    var indiaPercent = totalInvested > 0 ? (indiaData.invested / totalInvested * 100).toFixed(1) : 0;
-    var intlPercent = totalInvested > 0 ? (intlData.invested / totalInvested * 100).toFixed(1) : 0;
+    var indiaPercent = totalInvested > 0 ? (indiaData.invested / totalInvested * 100).toFixed(2) : 0;
+    var intlPercent = totalInvested > 0 ? (intlData.invested / totalInvested * 100).toFixed(2) : 0;
 
     return '\
       <div class="grid grid-cols-2 gap-4 mb-4">\

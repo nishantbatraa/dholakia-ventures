@@ -168,7 +168,7 @@ FamilyOffice.Dashboard = (function () {
             </div>\
           </div>\
           <div class="text-right">\
-            <div style="font-weight: 600; color: var(--color-success);">+' + company.growthPct.toFixed(0) + '%</div>\
+            <div style="font-weight: 600; color: var(--color-success);">+' + company.growthPct.toFixed(2) + '%</div>\
             <div class="text-xs text-muted">' + Utils.formatMOIC(company.moic) + ' MOIC</div>\
           </div>\
         </div>';
