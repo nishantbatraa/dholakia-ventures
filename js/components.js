@@ -108,8 +108,22 @@ FamilyOffice.Components = (function () {
       </div>';
   }
 
+  // Helper function to calculate total invested from initial + all follow-ons
+  function calculateTotalInvested(company) {
+    var total = company.initialInvestment || 0;
+    if (company.followOns && company.followOns.length > 0) {
+      company.followOns.forEach(function (fo) {
+        if (fo.didWeInvest && fo.ourInvestment) {
+          total += fo.ourInvestment;
+        }
+      });
+    }
+    return total;
+  }
+
   function renderCompanyCard(company) {
     var avatarColor = Utils.getAvatarColor(company.name);
+    var totalInvested = calculateTotalInvested(company);
     return '\
       <div class="company-card" data-company-id="' + company.id + '">\
         <div class="company-card-header">\
@@ -123,7 +137,7 @@ FamilyOffice.Components = (function () {
         </div>\
         <div class="company-card-meta">\
           <span class="company-card-tag">' + company.dealSourcer + '</span>\
-          <span class="company-card-investment">' + Utils.formatCurrency(company.totalInvested || company.initialInvestment || 0) + '</span>\
+          <span class="company-card-investment">' + Utils.formatCurrency(totalInvested) + '</span>\
         </div>\
       </div>';
   }
