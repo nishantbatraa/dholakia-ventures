@@ -126,6 +126,10 @@ FamilyOffice.Portfolio = (function () {
     }
 
     function initEvents() {
+        // Prevent attaching duplicate event listeners
+        if (window._portfolioEventsInitialized) return;
+        window._portfolioEventsInitialized = true;
+
         var pageContent = document.getElementById('page-content');
         var modalContainer = document.getElementById('modal-container');
 
