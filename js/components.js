@@ -145,6 +145,9 @@ FamilyOffice.Components = (function () {
   function renderStageColumn(stage, companies) {
     var stageClass = stage.toLowerCase().replace(/[&]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-');
     var cards = companies.map(function (c) { return renderCompanyCard(c); }).join('');
+    var contentHtml = companies.length > 0
+      ? cards
+      : '<div class="stage-column-empty">No companies</div>';
     return '\
       <div class="stage-column stage-' + stageClass + '">\
         <div class="stage-column-header">\
@@ -155,7 +158,7 @@ FamilyOffice.Components = (function () {
           <span class="stage-column-count">' + companies.length + '</span>\
         </div>\
         <div class="stage-column-content">\
-          ' + cards + '\
+          ' + contentHtml + '\
         </div>\
       </div>';
   }
@@ -225,7 +228,7 @@ FamilyOffice.Components = (function () {
       </div>';
   }
 
-  function renderFilterBar(filters, companyCount) {
+  function renderFilterBar(filters, companyCount, currentView) {
     filters = filters || {};
     var industryOptions = Data.getAllIndustries().map(function (ind) {
       return '<option value="' + ind + '" ' + (filters.industry === ind ? 'selected' : '') + '>' + ind + '</option>';
@@ -261,11 +264,22 @@ FamilyOffice.Components = (function () {
             <option value="all">Sourcer</option>\
             ' + memberOptions + '\
           </select>\
+          <div class="filter-divider"></div>\
+          <div class="stage-toggle-inline" id="stage-toggle-container"></div>\
         </div>\
         <div class="filter-right">\
           <span class="filter-count text-sm text-muted">' + countText + '</span>\
           <div class="filter-search">\
             <input type="text" id="filter-search" placeholder="Search..." value="' + (filters.search || '') + '">\
+          </div>\
+          <div class="filter-divider"></div>\
+          <div class="tabs tabs-compact">\
+            <button class="tab ' + (currentView === 'board' ? 'active' : '') + '" data-view="board">\
+              ' + icons.board + ' Board\
+            </button>\
+            <button class="tab ' + (currentView === 'table' ? 'active' : '') + '" data-view="table">\
+              ' + icons.table + ' Table\
+            </button>\
           </div>\
         </div>\
       </div>';

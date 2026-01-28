@@ -27,18 +27,19 @@ FamilyOffice.Portfolio = (function () {
 
         return '\
       <div class="animate-fadeIn portfolio-page">\
-        ' + Components.renderFilterBar(currentFilters, filteredCompanies.length) + '\
+        ' + Components.renderFilterBar(currentFilters, filteredCompanies.length, currentView) + '\
         <div id="portfolio-content" class="portfolio-scroll-container">\
-          <div class="portfolio-sub-header">\
-            <div class="stage-toggle-inline" id="stage-toggle-container"></div>\
-            ' + Components.renderViewToggle(currentView) + '\
-          </div>\
           ' + (currentView === 'board' ? renderBoardView(filteredCompanies) : renderTableView(filteredCompanies)) + '\
         </div>\
       </div>';
     }
 
     function renderBoardView(companies) {
+        // Show empty state if no companies match filters
+        if (companies.length === 0) {
+            return '<div class="board-empty-state">No companies found. Try adjusting your filters.</div>';
+        }
+
         // Use Data.STAGES plus IPO, Exited and Written Off for the board columns
         var stages = Data.STAGES.concat(['IPO', 'Exited', 'Written Off']);
         var byStage = {};
@@ -79,15 +80,8 @@ FamilyOffice.Portfolio = (function () {
             }
         });
 
-        // Inject stage toggle into the sub-header
-        setTimeout(function() {
-            var container = document.getElementById('stage-toggle-container');
-            if (container) {
-                container.innerHTML = '<span class="text-muted" style="font-size: 13px;">Group by:</span>' +
-                    '<button class="btn btn-sm ' + (stageViewMode === 'current' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-current">Current</button>' +
-                    '<button class="btn btn-sm ' + (stageViewMode === 'entry' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-entry">Entry</button>';
-            }
-        }, 0);
+        // Inject stage toggle into the sub-header (for initial render)
+        setTimeout(updateStageToggle, 0);
 
         return '<div class="board-container">' +
             stages.map(function (stage) {
@@ -97,6 +91,9 @@ FamilyOffice.Portfolio = (function () {
     }
 
     function renderTableView(companies) {
+        // Inject stage toggle for table view too
+        setTimeout(updateStageToggle, 0);
+
         if (companies.length === 0) {
             return Components.renderEmptyState(
                 '📂',
@@ -132,6 +129,18 @@ FamilyOffice.Portfolio = (function () {
         });
 
         content.innerHTML = currentView === 'board' ? renderBoardView(filteredCompanies) : renderTableView(filteredCompanies);
+
+        // Always update stage toggle buttons (for both board and table view)
+        updateStageToggle();
+    }
+
+    function updateStageToggle() {
+        var container = document.getElementById('stage-toggle-container');
+        if (container) {
+            container.innerHTML = '<span class="text-muted" style="font-size: 13px;">Group by:</span>' +
+                '<button class="btn btn-sm ' + (stageViewMode === 'current' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-current">Current</button>' +
+                '<button class="btn btn-sm ' + (stageViewMode === 'entry' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-entry">Entry</button>';
+        }
     }
 
     function initEvents() {

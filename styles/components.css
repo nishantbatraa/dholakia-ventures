@@ -602,11 +602,12 @@
     display: flex;
     gap: var(--space-4);
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     padding-bottom: var(--space-4);
     min-width: 100%;
     width: max-content;
-    min-height: 400px;
+    flex: 1 1 0;
+    min-height: 0;
 }
 
 /* Custom scrollbar for board */
@@ -632,8 +633,8 @@
     border-radius: var(--radius-xl);
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 280px);
-    min-height: 300px;
+    height: 100%;
+    min-height: 200px;
 }
 
 .stage-column-header {
@@ -642,6 +643,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-secondary);
+    z-index: 1;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    flex-shrink: 0;
 }
 
 .stage-column-title {
@@ -673,6 +680,32 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    min-height: 0;
+}
+
+/* Empty column state */
+.stage-column-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    padding: var(--space-4);
+    text-align: center;
+}
+
+/* Board empty state (when all columns are empty) */
+.board-empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-base);
 }
 
 /* Stage Colors */
@@ -1294,38 +1327,57 @@
     color: var(--color-text-tertiary);
 }
 
-/* Portfolio page layout */
-.portfolio-page {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 120px);
+/* Divider between filter groups */
+.filter-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--color-border);
+    margin: 0 var(--space-2);
 }
 
-.portfolio-scroll-container {
-    flex: 1;
-    overflow: auto;
-    padding-bottom: var(--space-6);
-}
-
-/* Portfolio sub-header with view toggle and group by */
-.portfolio-sub-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-2) 0;
-    margin-bottom: var(--space-2);
-}
-
+/* Stage toggle inline in filter bar */
 .stage-toggle-inline {
     display: flex;
     align-items: center;
     gap: var(--space-2);
 }
 
-/* View toggle in sub-header - aligned right */
-.portfolio-sub-header .tabs {
-    margin-left: auto;
+.stage-toggle-inline .text-muted {
+    font-size: var(--font-size-xs);
 }
+
+.stage-toggle-inline .btn-sm {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+}
+
+/* Compact tabs for filter bar */
+.tabs-compact {
+    gap: var(--space-1);
+}
+
+.tabs-compact .tab {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+}
+
+/* Portfolio page layout */
+.portfolio-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    min-height: 0; /* Allow flex children to shrink */
+}
+
+.portfolio-scroll-container {
+    flex: 1 1 0;
+    min-height: 0; /* Critical for nested flex scroll */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Page doesn't scroll, columns do */
+    padding-bottom: var(--space-2);
+}
+
 
 .filter-count {
     flex-shrink: 0;
