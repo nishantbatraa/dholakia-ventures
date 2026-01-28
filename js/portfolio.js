@@ -26,13 +26,13 @@ FamilyOffice.Portfolio = (function () {
         var filteredCompanies = Utils.filterCompanies(companies, currentFilters);
 
         return '\
-      <div class="animate-fadeIn">\
-        <div class="flex justify-between items-center mb-6">\
+      <div class="animate-fadeIn portfolio-page">\
+        <div class="flex justify-between items-center mb-4">\
           ' + Components.renderViewToggle(currentView) + '\
           <div class="text-sm text-muted">' + filteredCompanies.length + ' companies</div>\
         </div>\
         ' + Components.renderFilterBar(currentFilters) + '\
-        <div id="portfolio-content">\
+        <div id="portfolio-content" class="portfolio-scroll-container">\
           ' + (currentView === 'board' ? renderBoardView(filteredCompanies) : renderTableView(filteredCompanies)) + '\
         </div>\
       </div>';

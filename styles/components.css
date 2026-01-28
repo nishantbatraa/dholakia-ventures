@@ -1207,12 +1207,16 @@
     align-items: center;
     flex-wrap: nowrap;
     gap: var(--space-3);
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
     background: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
     overflow: hidden;
+    /* Sticky positioning */
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .filter-group {
@@ -1261,6 +1265,19 @@
 
 .filter-search input::placeholder {
     color: var(--color-text-tertiary);
+}
+
+/* Portfolio page layout */
+.portfolio-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+}
+
+.portfolio-scroll-container {
+    flex: 1;
+    overflow: auto;
+    padding-bottom: var(--space-6);
 }
 
 /* ============================================
