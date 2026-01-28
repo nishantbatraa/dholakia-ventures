@@ -49,17 +49,18 @@ FamilyOffice.Portfolio = (function () {
 
         stages.forEach(function (stage) {
             if (stage === 'IPO') {
-                // Show companies in IPO column if currentStage is 'IPO'
-                byStage[stage] = companies.filter(function (c) {
+                // In Current mode: show companies with currentStage === 'IPO'
+                // In Entry mode: IPO column is empty (companies show in their entry stage column)
+                byStage[stage] = useEntryStage ? [] : companies.filter(function (c) {
                     return c.currentStage === 'IPO';
                 });
             } else if (stage === 'Exited') {
-                // Show companies in Exited column if status is 'Exited' OR currentStage is 'Exited'
+                // Exited column always shows by status, regardless of view mode
                 byStage[stage] = companies.filter(function (c) {
                     return c.status === 'Exited' || c.currentStage === 'Exited';
                 });
             } else if (stage === 'Written Off') {
-                // Show companies in Written Off column if status is 'Written-off' OR currentStage is 'Written Off'
+                // Written Off column always shows by status, regardless of view mode
                 byStage[stage] = companies.filter(function (c) {
                     return c.status === 'Written-off' || c.currentStage === 'Written Off';
                 });
@@ -69,13 +70,17 @@ FamilyOffice.Portfolio = (function () {
                     var companyStage = useEntryStage ? (c.entryStage || c.currentStage) : (c.currentStage || c.entryStage);
                     // Treat null/undefined/Active status as Active
                     var companyStatus = c.status || 'Active';
-                    // Don't show in regular columns if status is Exited/Written-off or currentStage is Exited/Written Off/IPO
-                    return companyStage === stage &&
-                        companyStatus !== 'Exited' &&
-                        companyStatus !== 'Written-off' &&
-                        c.currentStage !== 'Exited' &&
-                        c.currentStage !== 'Written Off' &&
-                        c.currentStage !== 'IPO';
+                    // Always exclude exited/written-off companies from regular columns
+                    if (companyStatus === 'Exited' || companyStatus === 'Written-off' ||
+                        c.currentStage === 'Exited' || c.currentStage === 'Written Off') {
+                        return false;
+                    }
+                    // In Current mode: also exclude IPO companies (they go to IPO column)
+                    // In Entry mode: include them in their entry stage column
+                    if (!useEntryStage && c.currentStage === 'IPO') {
+                        return false;
+                    }
+                    return companyStage === stage;
                 });
             }
         });
