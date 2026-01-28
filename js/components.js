@@ -225,7 +225,7 @@ FamilyOffice.Components = (function () {
       </div>';
   }
 
-  function renderFilterBar(filters) {
+  function renderFilterBar(filters, companyCount) {
     filters = filters || {};
     var industryOptions = Data.getAllIndustries().map(function (ind) {
       return '<option value="' + ind + '" ' + (filters.industry === ind ? 'selected' : '') + '>' + ind + '</option>';
@@ -240,38 +240,33 @@ FamilyOffice.Components = (function () {
       return '<option value="' + member + '" ' + (filters.dealSourcer === member ? 'selected' : '') + '>' + member + '</option>';
     }).join('');
 
+    var countText = companyCount !== undefined ? companyCount + ' companies' : '';
+
     return '\
       <div class="filter-bar">\
-        <div class="filter-group">\
-          <label class="filter-label">Industry:</label>\
-          <select class="filter-select" id="filter-industry">\
-            <option value="all">All Industries</option>\
+        <div class="filter-left">\
+          <select class="filter-select" id="filter-industry" title="Industry">\
+            <option value="all">Industry</option>\
             ' + industryOptions + '\
           </select>\
-        </div>\
-        <div class="filter-group">\
-          <label class="filter-label">Stage:</label>\
-          <select class="filter-select" id="filter-stage">\
-            <option value="all">All Stages</option>\
+          <select class="filter-select" id="filter-stage" title="Stage">\
+            <option value="all">Stage</option>\
             ' + stageOptions + '\
           </select>\
-        </div>\
-        <div class="filter-group">\
-          <label class="filter-label">Status:</label>\
-          <select class="filter-select" id="filter-status">\
-            <option value="all">All Statuses</option>\
+          <select class="filter-select" id="filter-status" title="Status">\
+            <option value="all">Status</option>\
             ' + statusOptions + '\
           </select>\
-        </div>\
-        <div class="filter-group">\
-          <label class="filter-label">Deal Sourcer:</label>\
-          <select class="filter-select" id="filter-deal-sourcer">\
-            <option value="all">All</option>\
+          <select class="filter-select" id="filter-deal-sourcer" title="Deal Sourcer">\
+            <option value="all">Sourcer</option>\
             ' + memberOptions + '\
           </select>\
         </div>\
-        <div class="filter-search">\
-          <input type="text" id="filter-search" placeholder="Search..." value="' + (filters.search || '') + '">\
+        <div class="filter-right">\
+          <span class="filter-count text-sm text-muted">' + countText + '</span>\
+          <div class="filter-search">\
+            <input type="text" id="filter-search" placeholder="Search..." value="' + (filters.search || '') + '">\
+          </div>\
         </div>\
       </div>';
   }
@@ -452,7 +447,9 @@ FamilyOffice.Components = (function () {
             <select class="form-select" name="currentStage" required>\
               <option value="">Select Stage</option>\
               ' + currentStageOptions + '\
+              <option value="IPO" ' + (company.currentStage === 'IPO' ? 'selected' : '') + '>IPO</option>\
               <option value="Exited" ' + (company.currentStage === 'Exited' ? 'selected' : '') + '>Exited</option>\
+              <option value="Written Off" ' + (company.currentStage === 'Written Off' ? 'selected' : '') + '>Written Off</option>\
             </select>\
           </div>\
         </div>\

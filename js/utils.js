@@ -87,6 +87,7 @@ FamilyOffice.Utils = (function () {
             'Series A': 'badge-series-a',
             'Series B & Above': 'badge-series-b',
             'Pre-IPO': 'badge-pre-ipo',
+            'IPO': 'badge-ipo',
             'Exited': 'badge-exited',
             'Written Off': 'badge-written-off'
         };

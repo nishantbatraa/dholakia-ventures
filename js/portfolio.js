@@ -27,27 +27,32 @@ FamilyOffice.Portfolio = (function () {
 
         return '\
       <div class="animate-fadeIn portfolio-page">\
-        <div class="flex justify-between items-center mb-4">\
-          ' + Components.renderViewToggle(currentView) + '\
-          <div class="text-sm text-muted">' + filteredCompanies.length + ' companies</div>\
-        </div>\
-        ' + Components.renderFilterBar(currentFilters) + '\
+        ' + Components.renderFilterBar(currentFilters, filteredCompanies.length) + '\
         <div id="portfolio-content" class="portfolio-scroll-container">\
+          <div class="portfolio-sub-header">\
+            <div class="stage-toggle-inline" id="stage-toggle-container"></div>\
+            ' + Components.renderViewToggle(currentView) + '\
+          </div>\
           ' + (currentView === 'board' ? renderBoardView(filteredCompanies) : renderTableView(filteredCompanies)) + '\
         </div>\
       </div>';
     }
 
     function renderBoardView(companies) {
-        // Use Data.STAGES plus Exited and Written Off for the board columns
-        var stages = Data.STAGES.concat(['Exited', 'Written Off']);
+        // Use Data.STAGES plus IPO, Exited and Written Off for the board columns
+        var stages = Data.STAGES.concat(['IPO', 'Exited', 'Written Off']);
         var byStage = {};
 
         // Determine which stage field to use based on stageViewMode
         var useEntryStage = stageViewMode === 'entry';
 
         stages.forEach(function (stage) {
-            if (stage === 'Exited') {
+            if (stage === 'IPO') {
+                // Show companies in IPO column if currentStage is 'IPO'
+                byStage[stage] = companies.filter(function (c) {
+                    return c.currentStage === 'IPO';
+                });
+            } else if (stage === 'Exited') {
                 // Show companies in Exited column if status is 'Exited' OR currentStage is 'Exited'
                 byStage[stage] = companies.filter(function (c) {
                     return c.status === 'Exited' || c.currentStage === 'Exited';
@@ -63,24 +68,28 @@ FamilyOffice.Portfolio = (function () {
                     var companyStage = useEntryStage ? (c.entryStage || c.currentStage) : (c.currentStage || c.entryStage);
                     // Treat null/undefined/Active status as Active
                     var companyStatus = c.status || 'Active';
-                    // Don't show in regular columns if status is Exited/Written-off or currentStage is Exited/Written Off
+                    // Don't show in regular columns if status is Exited/Written-off or currentStage is Exited/Written Off/IPO
                     return companyStage === stage &&
                         companyStatus !== 'Exited' &&
                         companyStatus !== 'Written-off' &&
                         c.currentStage !== 'Exited' &&
-                        c.currentStage !== 'Written Off';
+                        c.currentStage !== 'Written Off' &&
+                        c.currentStage !== 'IPO';
                 });
             }
         });
 
-        // Stage toggle buttons
-        var stageToggleHtml = '<div class="stage-toggle" style="display: flex; gap: 8px; margin-bottom: 16px;">' +
-            '<span class="text-muted" style="font-size: 13px; align-self: center;">Group by:</span>' +
-            '<button class="btn btn-sm ' + (stageViewMode === 'current' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-current">Current Stage</button>' +
-            '<button class="btn btn-sm ' + (stageViewMode === 'entry' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-entry">Entry Stage</button>' +
-            '</div>';
+        // Inject stage toggle into the sub-header
+        setTimeout(function() {
+            var container = document.getElementById('stage-toggle-container');
+            if (container) {
+                container.innerHTML = '<span class="text-muted" style="font-size: 13px;">Group by:</span>' +
+                    '<button class="btn btn-sm ' + (stageViewMode === 'current' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-current">Current</button>' +
+                    '<button class="btn btn-sm ' + (stageViewMode === 'entry' ? 'btn-primary' : 'btn-ghost') + '" id="stage-view-entry">Entry</button>';
+            }
+        }, 0);
 
-        return stageToggleHtml + '<div class="board-container">' +
+        return '<div class="board-container">' +
             stages.map(function (stage) {
                 return Components.renderStageColumn(stage, byStage[stage] || []);
             }).join('') +
@@ -107,8 +116,8 @@ FamilyOffice.Portfolio = (function () {
         var companies = Data.getCompanies();
         var filteredCompanies = Utils.filterCompanies(companies, currentFilters);
 
-        // Update count
-        var countEl = document.querySelector('.flex.justify-between .text-sm.text-muted');
+        // Update count in filter bar
+        var countEl = document.querySelector('.filter-count');
         if (countEl) {
             countEl.textContent = filteredCompanies.length + ' companies';
         }
