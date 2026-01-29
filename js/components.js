@@ -206,7 +206,7 @@ FamilyOffice.Components = (function () {
     var rows = companies.map(function (c) { return renderTableRow(c); }).join('');
     return '\
       <div class="table-container">\
-        <div style="overflow-x: auto;">\
+        <div class="table-scroll-wrapper">\
           <table class="table">\
             <thead>\
               <tr>\
