@@ -378,7 +378,18 @@ FamilyOffice.Utils = (function () {
             // Must use dynamically calculated ownership, not stored ownership
             var ownershipHistory = calculateOwnershipHistory(company);
             var currentOwnership = ownershipHistory.currentOwnership || company.ownership || 0;
-            terminalValue = (company.latestValuation || 0) * currentOwnership / 100;
+
+            // Get the latest valuation: check follow-ons for most recent roundValuation
+            var latestValuation = company.latestValuation || 0;
+            if (company.followOns && company.followOns.length > 0) {
+                company.followOns.forEach(function (fo) {
+                    if (fo.roundValuation && fo.roundValuation > latestValuation) {
+                        latestValuation = fo.roundValuation;
+                    }
+                });
+            }
+
+            terminalValue = latestValuation * currentOwnership / 100;
             // For Active companies: if terminal date equals entry date (no follow-ons),
             // use today's date to get a meaningful IRR calculation
             if (terminalDate === company.entryDate) {
