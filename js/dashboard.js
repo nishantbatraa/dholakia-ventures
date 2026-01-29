@@ -115,11 +115,11 @@ FamilyOffice.Dashboard = (function () {
       })
       .slice(0, 5);
 
-    // Top performers - sorted by valuation growth
+    // Top performers - sorted by valuation growth (use dynamic ownership and valuation)
     var topPerformers = companies
       .filter(function (c) { return c.status === 'Active' && c.totalInvested > 0; })
       .map(function (c) {
-        var unrealizedValue = c.latestValuation * (c.ownership / 100);
+        var unrealizedValue = Utils.getUnrealizedValue(c);
         var growthPct = ((unrealizedValue - c.totalInvested) / c.totalInvested) * 100;
         return {
           name: c.name,

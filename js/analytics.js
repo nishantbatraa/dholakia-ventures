@@ -208,10 +208,11 @@ FamilyOffice.Analytics = (function () {
     var companies = applyFilters(allCompanies);
 
     // Calculate metrics from filtered companies
+    // Use dynamic ownership and valuation for accurate calculations
     var metrics = {
       totalInvested: companies.reduce(function (sum, c) { return sum + (c.totalInvested || 0); }, 0),
       unrealizedValue: companies.filter(function (c) { return c.status === 'Active' || !c.status; })
-        .reduce(function (sum, c) { return sum + ((c.latestValuation || 0) * ((c.ownership || 0) / 100)); }, 0),
+        .reduce(function (sum, c) { return sum + Utils.getUnrealizedValue(c); }, 0),
       totalExitValue: companies.filter(function (c) { return c.status === 'Exited'; })
         .reduce(function (sum, c) { return sum + (c.exitValue || 0); }, 0)
     };
@@ -287,11 +288,11 @@ FamilyOffice.Analytics = (function () {
     // Top investments
     var topByInvestment = companies.slice().sort(function (a, b) { return (b.totalInvested || 0) - (a.totalInvested || 0); }).slice(0, 10);
 
-    // Unrealized gains
+    // Unrealized gains - use dynamic ownership and valuation
     var unrealizedGains = companies
       .filter(function (c) { return c.status === 'Active' || !c.status; })
       .map(function (c) {
-        var unrealizedValue = (c.latestValuation || 0) * ((c.ownership || 0) / 100);
+        var unrealizedValue = Utils.getUnrealizedValue(c);
         var invested = c.totalInvested || 0;
         return {
           name: c.name,
@@ -1103,10 +1104,12 @@ FamilyOffice.Analytics = (function () {
       team[c.dealSourcer].invested += c.totalInvested;
 
       if (c.status === 'Active') {
-        var moic = (c.latestValuation * (c.ownership / 100)) / c.totalInvested;
+        // Use dynamic ownership and valuation
+        var unrealizedValue = Utils.getUnrealizedValue(c);
+        var moic = c.totalInvested > 0 ? unrealizedValue / c.totalInvested : 0;
         team[c.dealSourcer].totalMoic += moic;
       } else if (c.status === 'Exited') {
-        var exitMoic = c.exitValue / c.totalInvested;
+        var exitMoic = c.totalInvested > 0 ? c.exitValue / c.totalInvested : 0;
         team[c.dealSourcer].totalMoic += exitMoic;
       }
     });
@@ -1245,14 +1248,14 @@ FamilyOffice.Analytics = (function () {
       return monthsSince > 18;
     });
 
-    // Top concentration - investments where we have >10% ownership
+    // Top concentration - investments where we have >10% ownership (use dynamic ownership)
     var highOwnership = activeCompanies.filter(function (c) {
-      return (c.ownership || 0) >= 10;
+      return Utils.getCurrentOwnership(c) >= 10;
     });
 
-    // Capital at risk (investments with MOIC < 1)
+    // Capital at risk (investments with MOIC < 1) - use dynamic values
     var atRisk = activeCompanies.filter(function (c) {
-      var unrealizedValue = (c.latestValuation || 0) * ((c.ownership || 0) / 100);
+      var unrealizedValue = Utils.getUnrealizedValue(c);
       var invested = c.totalInvested || 0;
       if (invested === 0) return false;
       var moic = unrealizedValue / invested;
@@ -1386,12 +1389,13 @@ FamilyOffice.Analytics = (function () {
     });
 
     // Convert to array and calculate estimated portfolio value at each point
+    // Use dynamic values for active companies
     var dateKeys = Object.keys(seenDates).sort();
     var totalCurrentValue = companies.reduce(function (sum, c) {
       if (c.status === 'Exited') {
         return sum + (c.exitValue || 0);
       }
-      return sum + ((c.latestValuation || 0) * ((c.ownership || 0) / 100));
+      return sum + Utils.getUnrealizedValue(c);
     }, 0);
     var totalInvested = companies.reduce(function (sum, c) { return sum + (c.totalInvested || 0); }, 0);
     var currentMoic = totalInvested > 0 ? totalCurrentValue / totalInvested : 1;
@@ -1510,12 +1514,12 @@ FamilyOffice.Analytics = (function () {
       byYear[year].count++;
       byYear[year].invested += c.totalInvested || 0;
 
-      // Calculate current value
+      // Calculate current value - use dynamic values for active companies
       var currentValue = 0;
       if (c.status === 'Exited') {
         currentValue = c.exitValue || 0;
       } else {
-        currentValue = (c.latestValuation || 0) * ((c.ownership || 0) / 100);
+        currentValue = Utils.getUnrealizedValue(c);
       }
       byYear[year].value += currentValue;
 
@@ -1606,7 +1610,7 @@ FamilyOffice.Analytics = (function () {
     window._chartData = window._chartData || {};
     window._chartData.moicVintage = vintageData;
 
-    // Calculate MOIC by stage
+    // Calculate MOIC by stage - use dynamic values
     var stageData = Data.STAGES.map(function (stage) {
       var stageComps = companies.filter(function (c) {
         var companyStage = c.currentStage || c.entryStage;
@@ -1616,7 +1620,7 @@ FamilyOffice.Analytics = (function () {
       var invested = stageComps.reduce(function (sum, c) { return sum + (c.totalInvested || 0); }, 0);
       var value = stageComps.reduce(function (sum, c) {
         if (c.status === 'Exited') return sum + (c.exitValue || 0);
-        return sum + ((c.latestValuation || 0) * ((c.ownership || 0) / 100));
+        return sum + Utils.getUnrealizedValue(c);
       }, 0);
 
       return {

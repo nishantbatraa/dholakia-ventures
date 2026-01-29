@@ -529,6 +529,56 @@ FamilyOffice.Utils = (function () {
         return result;
     }
 
+    /**
+     * Get the current ownership percentage for a company
+     * Uses dynamic calculation from follow-on rounds
+     *
+     * @param {Object} company - Company object
+     * @returns {number} Current ownership percentage
+     */
+    function getCurrentOwnership(company) {
+        var ownershipHistory = calculateOwnershipHistory(company);
+        return ownershipHistory.currentOwnership || company.ownership || 0;
+    }
+
+    /**
+     * Get the latest valuation for a company
+     * Checks follow-on rounds for higher valuations
+     *
+     * @param {Object} company - Company object
+     * @returns {number} Latest valuation
+     */
+    function getLatestValuation(company) {
+        var latestValuation = company.latestValuation || 0;
+        if (company.followOns && company.followOns.length > 0) {
+            company.followOns.forEach(function (fo) {
+                if (fo.roundValuation && fo.roundValuation > latestValuation) {
+                    latestValuation = fo.roundValuation;
+                }
+            });
+        }
+        return latestValuation;
+    }
+
+    /**
+     * Calculate the current unrealized value for a company
+     * Uses dynamic ownership and latest valuation
+     *
+     * @param {Object} company - Company object
+     * @returns {number} Current unrealized value (latestValuation * ownership%)
+     */
+    function getUnrealizedValue(company) {
+        if (company.status === 'Exited') {
+            return 0; // Exited companies have no unrealized value
+        }
+        if (company.status === 'Written-off') {
+            return 0; // Written-off companies have no value
+        }
+        var ownership = getCurrentOwnership(company);
+        var valuation = getLatestValuation(company);
+        return valuation * ownership / 100;
+    }
+
     // Icons
     var icons = {
         dashboard: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>',
@@ -563,6 +613,9 @@ FamilyOffice.Utils = (function () {
         calculateCompanyIRR: calculateCompanyIRR,
         getPortfolioCashFlows: getPortfolioCashFlows,
         calculateOwnershipHistory: calculateOwnershipHistory,
+        getCurrentOwnership: getCurrentOwnership,
+        getLatestValuation: getLatestValuation,
+        getUnrealizedValue: getUnrealizedValue,
         icons: icons,
         getCurrency: getCurrency,
         setCurrency: setCurrency
