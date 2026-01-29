@@ -364,6 +364,7 @@ FamilyOffice.Utils = (function () {
         // Terminal value based on status
         var terminalValue = 0;
         var terminalDate = latestDate;
+        var today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
         if (company.status === 'Exited' && company.exitValue > 0) {
             // Exited: use exit value and exit date
@@ -375,6 +376,11 @@ FamilyOffice.Utils = (function () {
         } else {
             // Active: use current value (latestValuation * ownership%)
             terminalValue = (company.latestValuation || 0) * (company.ownership || 0) / 100;
+            // For Active companies: if terminal date equals entry date (no follow-ons),
+            // use today's date to get a meaningful IRR calculation
+            if (terminalDate === company.entryDate) {
+                terminalDate = today;
+            }
         }
 
         // For written-off companies: IRR = -100%
