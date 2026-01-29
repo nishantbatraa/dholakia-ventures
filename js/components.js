@@ -657,6 +657,38 @@ FamilyOffice.Components = (function () {
       </div>';
   }
 
+  // Render IRR card for company detail
+  function renderIRRCard(company) {
+    var irrData = Utils.calculateCompanyIRR(company);
+    var irrDisplay = Utils.formatXIRR(irrData.irr);
+    var irrColor = 'var(--color-text-primary)';
+
+    // Color coding: green for positive, red for negative
+    if (irrData.irr !== null) {
+      if (irrData.irr > 0) {
+        irrColor = '#10b981'; // green
+      } else if (irrData.irr < 0) {
+        irrColor = '#ef4444'; // red
+      }
+    }
+
+    var dateLabel = '';
+    if (company.status === 'Exited') {
+      dateLabel = 'At exit';
+    } else if (company.status === 'Written-off') {
+      dateLabel = 'Written off';
+    } else if (irrData.valuationDate) {
+      dateLabel = 'As of ' + Utils.formatDate(irrData.valuationDate);
+    }
+
+    return '\
+      <div class="card" style="padding: var(--space-4);">\
+        <div class="text-xs text-muted mb-1">IRR</div>\
+        <div style="font-size: 1.25rem; font-weight: 600; color: ' + irrColor + ';">' + irrDisplay + '</div>\
+        <div class="text-xs text-muted" style="margin-top: 4px;">' + dateLabel + '</div>\
+      </div>';
+  }
+
   function renderCompanyDetail(company) {
     var avatarColor = Utils.getAvatarColor(company.name);
 
@@ -779,7 +811,7 @@ FamilyOffice.Components = (function () {
           </div>\
         </div>\
       </div>\
-      <div class="grid grid-cols-3 gap-4 mt-6">\
+      <div class="grid grid-cols-4 gap-4 mt-6">\
         <div class="card" style="padding: var(--space-4);">\
           <div class="text-xs text-muted mb-1">Total Invested</div>\
           <div style="font-size: 1.25rem; font-weight: 600; color: var(--color-accent-tertiary);">' + Utils.formatCurrency(totalInvested) + '</div>\
@@ -795,6 +827,7 @@ FamilyOffice.Components = (function () {
           <div style="font-size: 1.25rem; font-weight: 600;">' + displayOwnership.toFixed(2) + '%</div>\
           ' + (company.followOns && company.followOns.length > 0 ? '<div class="text-xs text-muted" style="margin-top: 4px;">After ' + company.followOns.length + ' round(s)</div>' : '') + '\
         </div>\
+        ' + renderIRRCard(company) + '\
       </div>\
       <div class="grid grid-cols-2 gap-4 mt-4">\
         <div>\

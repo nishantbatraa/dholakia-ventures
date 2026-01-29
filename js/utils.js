@@ -324,6 +324,100 @@ FamilyOffice.Utils = (function () {
     }
 
     /**
+     * Calculate IRR for a single company
+     * Uses latest round date for terminal value (not today)
+     *
+     * @param {Object} company - Company object
+     * @returns {Object} { irr: number|null, valuationDate: string }
+     */
+    function calculateCompanyIRR(company) {
+        var cashFlows = [];
+        var latestDate = company.entryDate || '';
+        var totalInvested = 0;
+
+        // Initial investment (outflow - negative)
+        if (company.entryDate && company.initialInvestment) {
+            cashFlows.push({
+                date: company.entryDate,
+                amount: -company.initialInvestment
+            });
+            totalInvested += company.initialInvestment;
+        }
+
+        // Follow-on investments (outflows - negative)
+        if (company.followOns && company.followOns.length > 0) {
+            company.followOns.forEach(function (fo) {
+                if (fo.didWeInvest && fo.ourInvestment && fo.date) {
+                    cashFlows.push({
+                        date: fo.date,
+                        amount: -fo.ourInvestment
+                    });
+                    totalInvested += fo.ourInvestment;
+                }
+                // Track latest round date (regardless of whether we invested)
+                if (fo.date && fo.date > latestDate) {
+                    latestDate = fo.date;
+                }
+            });
+        }
+
+        // Terminal value based on status
+        var terminalValue = 0;
+        var terminalDate = latestDate;
+
+        if (company.status === 'Exited' && company.exitValue > 0) {
+            // Exited: use exit value and exit date
+            terminalValue = company.exitValue;
+            terminalDate = company.exitDate || latestDate;
+        } else if (company.status === 'Written-off') {
+            // Written off: terminal value is 0 (total loss)
+            terminalValue = 0;
+        } else {
+            // Active: use current value (latestValuation * ownership%)
+            terminalValue = (company.latestValuation || 0) * (company.ownership || 0) / 100;
+        }
+
+        // For written-off companies: IRR = -100%
+        if (company.status === 'Written-off') {
+            return {
+                irr: -1, // -100%
+                valuationDate: terminalDate,
+                terminalValue: 0,
+                totalInvested: totalInvested,
+                cashFlows: cashFlows
+            };
+        }
+
+        // If no terminal value or no investments, can't calculate IRR
+        if (terminalValue <= 0 || totalInvested <= 0) {
+            return {
+                irr: null,
+                valuationDate: terminalDate,
+                terminalValue: terminalValue,
+                totalInvested: totalInvested,
+                cashFlows: cashFlows
+            };
+        }
+
+        // Add terminal value as inflow (positive)
+        cashFlows.push({
+            date: terminalDate,
+            amount: terminalValue
+        });
+
+        // Calculate XIRR
+        var irr = calculateXIRR(cashFlows);
+
+        return {
+            irr: irr,
+            valuationDate: terminalDate,
+            terminalValue: terminalValue,
+            totalInvested: totalInvested,
+            cashFlows: cashFlows
+        };
+    }
+
+    /**
      * Calculate ownership history through all funding rounds
      * Applies dilution sequentially and tracks new acquisitions
      * 
@@ -446,6 +540,7 @@ FamilyOffice.Utils = (function () {
         debounce: debounce,
         filterCompanies: filterCompanies,
         calculateXIRR: calculateXIRR,
+        calculateCompanyIRR: calculateCompanyIRR,
         getPortfolioCashFlows: getPortfolioCashFlows,
         calculateOwnershipHistory: calculateOwnershipHistory,
         icons: icons,
