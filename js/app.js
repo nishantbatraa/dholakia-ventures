@@ -18,9 +18,164 @@ var FamilyOffice = FamilyOffice || {};
 
     var currentPage = 'dashboard';
 
+    // Password protection configuration
+    // IMPORTANT: Change this password and keep it secret
+    var APP_PASSWORD_HASH = 'dv2024secure'; // Simple password - change this!
+    var AUTH_KEY = 'dv_authenticated';
+
     function init() {
-        // Initialize app directly without auth
-        initApp();
+        // Check if already authenticated
+        if (isAuthenticated()) {
+            initApp();
+        } else {
+            showPasswordGate();
+        }
+    }
+
+    function isAuthenticated() {
+        var storedAuth = localStorage.getItem(AUTH_KEY);
+        return storedAuth === APP_PASSWORD_HASH;
+    }
+
+    function showPasswordGate() {
+        var appContainer = document.getElementById('app-container');
+        appContainer.style.display = 'none';
+
+        // Create password gate overlay
+        var gate = document.createElement('div');
+        gate.id = 'password-gate';
+        gate.innerHTML = '\
+            <div class="password-gate-overlay">\
+                <div class="password-gate-box">\
+                    <div class="password-gate-logo">DV</div>\
+                    <h2 class="password-gate-title">Dholakia Ventures</h2>\
+                    <p class="password-gate-subtitle">Enter password to access the dashboard</p>\
+                    <form id="password-form">\
+                        <input type="password" id="password-input" class="password-gate-input" placeholder="Enter password" autocomplete="current-password" autofocus>\
+                        <div id="password-error" class="password-gate-error"></div>\
+                        <button type="submit" class="password-gate-btn">Access Dashboard</button>\
+                    </form>\
+                </div>\
+            </div>';
+        document.body.appendChild(gate);
+
+        // Add password gate styles
+        var style = document.createElement('style');
+        style.textContent = '\
+            .password-gate-overlay {\
+                position: fixed;\
+                top: 0;\
+                left: 0;\
+                right: 0;\
+                bottom: 0;\
+                background: linear-gradient(135deg, #050508 0%, #0a0a0f 50%, #050508 100%);\
+                display: flex;\
+                align-items: center;\
+                justify-content: center;\
+                z-index: 10000;\
+            }\
+            .password-gate-box {\
+                background: rgba(255, 255, 255, 0.03);\
+                border: 1px solid rgba(255, 255, 255, 0.1);\
+                border-radius: 16px;\
+                padding: 48px;\
+                text-align: center;\
+                max-width: 400px;\
+                width: 90%;\
+            }\
+            .password-gate-logo {\
+                width: 64px;\
+                height: 64px;\
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);\
+                border-radius: 16px;\
+                display: flex;\
+                align-items: center;\
+                justify-content: center;\
+                font-size: 24px;\
+                font-weight: 700;\
+                color: white;\
+                margin: 0 auto 24px;\
+            }\
+            .password-gate-title {\
+                font-size: 24px;\
+                font-weight: 600;\
+                color: #f8fafc;\
+                margin: 0 0 8px;\
+            }\
+            .password-gate-subtitle {\
+                font-size: 14px;\
+                color: #71717a;\
+                margin: 0 0 32px;\
+            }\
+            .password-gate-input {\
+                width: 100%;\
+                padding: 14px 16px;\
+                background: rgba(255, 255, 255, 0.05);\
+                border: 1px solid rgba(255, 255, 255, 0.1);\
+                border-radius: 8px;\
+                color: #f8fafc;\
+                font-size: 16px;\
+                outline: none;\
+                transition: border-color 0.2s;\
+                box-sizing: border-box;\
+            }\
+            .password-gate-input:focus {\
+                border-color: #6366f1;\
+            }\
+            .password-gate-input::placeholder {\
+                color: #52525b;\
+            }\
+            .password-gate-error {\
+                color: #ef4444;\
+                font-size: 13px;\
+                margin-top: 8px;\
+                min-height: 20px;\
+            }\
+            .password-gate-btn {\
+                width: 100%;\
+                padding: 14px 24px;\
+                background: linear-gradient(135deg, #6366f1, #8b5cf6);\
+                border: none;\
+                border-radius: 8px;\
+                color: white;\
+                font-size: 15px;\
+                font-weight: 600;\
+                cursor: pointer;\
+                margin-top: 16px;\
+                transition: opacity 0.2s;\
+            }\
+            .password-gate-btn:hover {\
+                opacity: 0.9;\
+            }\
+        ';
+        document.head.appendChild(style);
+
+        // Handle form submission
+        document.getElementById('password-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var passwordInput = document.getElementById('password-input');
+            var errorDiv = document.getElementById('password-error');
+            var password = passwordInput.value;
+
+            if (password === APP_PASSWORD_HASH) {
+                // Store authentication
+                localStorage.setItem(AUTH_KEY, APP_PASSWORD_HASH);
+                // Remove gate and show app
+                gate.remove();
+                appContainer.style.display = '';
+                initApp();
+            } else {
+                errorDiv.textContent = 'Incorrect password. Please try again.';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        });
+    }
+
+    // Function to logout (can be called from settings)
+    function logout() {
+        localStorage.removeItem(AUTH_KEY);
+        window.location.reload();
     }
 
     function initApp() {
@@ -212,9 +367,10 @@ var FamilyOffice = FamilyOffice || {};
         });
     }
 
-    // Expose refresh function for currency changes
+    // Expose functions for external use
     FamilyOffice.App = {
-        refresh: refresh
+        refresh: refresh,
+        logout: logout
     };
 
     // Start the app when DOM is ready
