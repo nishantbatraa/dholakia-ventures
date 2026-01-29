@@ -374,8 +374,11 @@ FamilyOffice.Utils = (function () {
             // Written off: terminal value is 0 (total loss)
             terminalValue = 0;
         } else {
-            // Active: use current value (latestValuation * ownership%)
-            terminalValue = (company.latestValuation || 0) * (company.ownership || 0) / 100;
+            // Active: use current value (latestValuation * currentOwnership%)
+            // Must use dynamically calculated ownership, not stored ownership
+            var ownershipHistory = calculateOwnershipHistory(company);
+            var currentOwnership = ownershipHistory.currentOwnership || company.ownership || 0;
+            terminalValue = (company.latestValuation || 0) * currentOwnership / 100;
             // For Active companies: if terminal date equals entry date (no follow-ons),
             // use today's date to get a meaningful IRR calculation
             if (terminalDate === company.entryDate) {
