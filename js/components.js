@@ -523,6 +523,9 @@ FamilyOffice.Components = (function () {
                 <label class="form-label">Round Stage <span style="color: #ef4444;">*</span></label>\
                 <select class="form-select" id="followon-round">\
                   ' + Data.STAGES.map(function (s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') + '\
+                  <option value="IPO">IPO</option>\
+                  <option value="Exited">Exited</option>\
+                  <option value="Written Off">Written Off</option>\
                 </select>\
               </div>\
             </div>\
