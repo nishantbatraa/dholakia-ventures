@@ -5,9 +5,28 @@
 var FamilyOffice = FamilyOffice || {};
 
 FamilyOffice.ChatAssistant = (function() {
-    // Gemini API configuration
-    var GEMINI_API_KEY = 'AIzaSyBedSaHIdpK5aRNAvxngoApJzxi4EdGrdA';
+    // Gemini API configuration - key stored in localStorage for security
+    var GEMINI_API_KEY_STORAGE = 'dholakia_gemini_api_key';
     var GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+    // Get API key from localStorage
+    function getApiKey() {
+        return localStorage.getItem(GEMINI_API_KEY_STORAGE) || '';
+    }
+
+    // Set API key in localStorage
+    function setApiKey(key) {
+        if (key && key.trim()) {
+            localStorage.setItem(GEMINI_API_KEY_STORAGE, key.trim());
+            return true;
+        }
+        return false;
+    }
+
+    // Check if API key is configured
+    function hasApiKey() {
+        return !!getApiKey();
+    }
 
     // Chat state
     var isOpen = false;
@@ -180,6 +199,12 @@ ${companies.map(function(c) {
     // Send message to Gemini API
     function sendToGemini(userMessage) {
         return new Promise(function(resolve, reject) {
+            var apiKey = getApiKey();
+            if (!apiKey) {
+                reject(new Error('API key not configured. Please add your Gemini API key in Settings.'));
+                return;
+            }
+
             var systemPrompt = getSystemPrompt();
             var portfolioContext = getPortfolioContext();
 
@@ -208,7 +233,7 @@ ${companies.map(function(c) {
                 }
             };
 
-            fetch(GEMINI_API_URL + '?key=' + GEMINI_API_KEY, {
+            fetch(GEMINI_API_URL + '?key=' + apiKey, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -273,17 +298,27 @@ ${companies.map(function(c) {
         }).join('');
 
         if (messages.length === 0) {
-            messagesHtml = '<div class="chat-welcome">' +
-                '<div class="welcome-icon">🤖</div>' +
-                '<h3>Dholakia Ventures Assistant</h3>' +
-                '<p>Ask me anything about your portfolio!</p>' +
-                '<div class="quick-questions">' +
-                '<button class="quick-question" data-question="What is my total invested amount?">Total invested?</button>' +
-                '<button class="quick-question" data-question="What are my top 5 companies by value?">Top 5 companies?</button>' +
-                '<button class="quick-question" data-question="How is IRR calculated?">How is IRR calculated?</button>' +
-                '<button class="quick-question" data-question="Show me sector breakdown">Sector breakdown</button>' +
-                '</div>' +
-                '</div>';
+            if (!hasApiKey()) {
+                // Show setup instructions if no API key
+                messagesHtml = '<div class="chat-welcome">' +
+                    '<div class="welcome-icon">🔑</div>' +
+                    '<h3>Setup Required</h3>' +
+                    '<p>To use the AI assistant, please configure your Gemini API key in <strong>Settings</strong>.</p>' +
+                    '<p style="margin-top: 12px; font-size: 13px; color: var(--color-text-muted);">Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #3b82f6;">Google AI Studio</a></p>' +
+                    '</div>';
+            } else {
+                messagesHtml = '<div class="chat-welcome">' +
+                    '<div class="welcome-icon">🤖</div>' +
+                    '<h3>Dholakia Ventures Assistant</h3>' +
+                    '<p>Ask me anything about your portfolio!</p>' +
+                    '<div class="quick-questions">' +
+                    '<button class="quick-question" data-question="What is my total invested amount?">Total invested?</button>' +
+                    '<button class="quick-question" data-question="What are my top 5 companies by value?">Top 5 companies?</button>' +
+                    '<button class="quick-question" data-question="How is IRR calculated?">How is IRR calculated?</button>' +
+                    '<button class="quick-question" data-question="Show me sector breakdown">Sector breakdown</button>' +
+                    '</div>' +
+                    '</div>';
+            }
         }
 
         return '<div id="chat-panel" class="chat-panel">' +
@@ -423,7 +458,9 @@ ${companies.map(function(c) {
 
     return {
         init: init,
-        render: render
+        render: render,
+        setApiKey: setApiKey,
+        hasApiKey: hasApiKey
     };
 })();
 

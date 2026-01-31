@@ -72,6 +72,11 @@ FamilyOffice.Settings = (function () {
                 resetData();
             }
 
+            // AI Assistant API key
+            if (e.target.id === 'save-api-key-btn') {
+                saveApiKey();
+            }
+
             // User management buttons
             if (e.target.id === 'add-user-settings-btn') {
                 showAddUserModal();
@@ -331,6 +336,30 @@ FamilyOffice.Settings = (function () {
                 showNotification('Data reset to defaults', 'success');
                 render(); // Refresh the page
             }
+        }
+    }
+
+    function saveApiKey() {
+        var input = document.getElementById('gemini-api-key-input');
+        var apiKey = input ? input.value.trim() : '';
+
+        if (!apiKey) {
+            showNotification('Please enter an API key', 'error');
+            return;
+        }
+
+        var ChatAssistant = FamilyOffice.ChatAssistant;
+        if (ChatAssistant && ChatAssistant.setApiKey) {
+            var success = ChatAssistant.setApiKey(apiKey);
+            if (success) {
+                showNotification('API key saved successfully!', 'success');
+                input.value = ''; // Clear the input for security
+                render(); // Refresh to update the status
+            } else {
+                showNotification('Failed to save API key', 'error');
+            }
+        } else {
+            showNotification('Chat Assistant module not available', 'error');
         }
     }
 

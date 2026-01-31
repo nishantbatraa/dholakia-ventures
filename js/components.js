@@ -1254,6 +1254,32 @@ FamilyOffice.Components = (function () {
         </div>\
       </div>';
 
+    // AI Assistant API Key Section
+    var ChatAssistant = FamilyOffice.ChatAssistant;
+    var hasApiKey = ChatAssistant && ChatAssistant.hasApiKey ? ChatAssistant.hasApiKey() : false;
+    var apiKeyStatus = hasApiKey ?
+      '<span style="color: #10b981;">✓ API key configured</span>' :
+      '<span style="color: #f59e0b;">⚠ API key not configured</span>';
+
+    var aiAssistantSection = '\
+      <div class="settings-section">\
+        <div class="settings-section-header">\
+          <h3 class="settings-section-title">🤖 AI Assistant</h3>\
+          ' + (hasApiKey ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">● Active</span>' : '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">○ Setup Required</span>') + '\
+        </div>\
+        <div class="settings-section-content">\
+          <p class="settings-description">Configure your Gemini API key to enable the AI portfolio assistant. Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank" style="color: #3b82f6;">Google AI Studio</a>.</p>\
+          <div style="margin-bottom: 12px;">' + apiKeyStatus + '</div>\
+          <div style="display: flex; gap: 8px; align-items: center;">\
+            <input type="password" id="gemini-api-key-input" class="form-input" placeholder="Enter your Gemini API key" style="flex: 1; max-width: 400px;">\
+            <button class="btn btn-primary" id="save-api-key-btn">\
+              <span class="btn-icon">💾</span> Save Key\
+            </button>\
+          </div>\
+          <p class="text-xs text-muted" style="margin-top: 8px;">Your API key is stored securely in your browser\'s local storage.</p>\
+        </div>\
+      </div>';
+
     var dataManagementSection = '\
       <div class="settings-section">\
         <div class="settings-section-header">\
@@ -1287,6 +1313,7 @@ FamilyOffice.Components = (function () {
         </div>\
         <div class="settings-grid">\
           ' + userManagementSection + '\
+          ' + aiAssistantSection + '\
           ' + cloudSyncSection + '\
           ' + industriesSection + '\
           ' + teamSection + '\
