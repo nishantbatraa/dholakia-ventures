@@ -473,20 +473,31 @@ FamilyOffice.Components = (function () {
             <input type="number" class="form-input" name="initialInvestment" value="' + (company.initialInvestment || '') + '" min="0" step="1" required>\
           </div>\
           <div class="form-group">\
-            <label class="form-label">Latest Valuation (₹)</label>\
-            <input type="number" class="form-input" name="latestValuation" value="' + (company.latestValuation || '') + '" min="0" step="1">\
+            <label class="form-label">Share Type</label>\
+            <select class="form-select" name="shareType">\
+              <option value="primary" ' + (company.shareType !== 'secondary' ? 'selected' : '') + '>Primary</option>\
+              <option value="secondary" ' + (company.shareType === 'secondary' ? 'selected' : '') + '>Secondary</option>\
+            </select>\
           </div>\
         </div>\
         <div class="form-row">\
           <div class="form-group">\
-            <label class="form-label">Current Ownership (%)</label>\
-            <input type="number" class="form-input" name="ownership" value="' + (company.ownership || '') + '" min="0" max="100" step="0.001">\
+            <label class="form-label">Entry Valuation (₹)</label>\
+            <input type="number" class="form-input" name="entryValuation" value="' + (company.entryValuation || '') + '" min="0" step="1" placeholder="Valuation when you invested">\
           </div>\
+          <div class="form-group">\
+            <label class="form-label">Entry Ownership (%)</label>\
+            <input type="number" class="form-input" name="entryOwnership" value="' + (company.entryOwnership || '') + '" min="0" max="100" step="0.001" placeholder="Your equity when you invested">\
+          </div>\
+        </div>\
+        <div class="form-row">\
           <div class="form-group">\
             <label class="form-label">Status *</label>\
             <select class="form-select" name="status" required>\
               ' + statusOptions + '\
             </select>\
+          </div>\
+          <div class="form-group">\
           </div>\
         </div>\
         <div class="form-row" id="exit-fields-group" style="' + (company.status !== 'Exited' ? 'display: none;' : '') + '">\
@@ -557,52 +568,11 @@ FamilyOffice.Components = (function () {
               </div>\
             </div>\
             \
-            <!-- Ownership Entry Mode Toggle -->\
-            <div style="margin: 20px 0 16px; padding: 16px; background: var(--color-bg-secondary); border-radius: var(--radius-md); border: 1px solid var(--color-border);">\
-              <div style="margin-bottom: 12px; font-weight: 600; font-size: 14px;">How do you want to enter ownership?</div>\
-              <div style="display: flex; gap: 12px; margin-bottom: 12px;">\
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: var(--radius-md); border: 2px solid var(--color-accent-primary); background: rgba(139, 92, 246, 0.15); flex: 1;" id="ownership-mode-auto-label">\
-                  <input type="radio" name="ownership-mode" value="auto" id="ownership-mode-auto" checked style="accent-color: var(--color-accent-primary);">\
-                  <div>\
-                    <div style="font-size: 13px; font-weight: 500;">🧮 Auto-Calculate</div>\
-                    <div style="font-size: 11px; color: var(--color-text-muted);">Requires: Pre-money valuation</div>\
-                  </div>\
-                </label>\
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: var(--radius-md); border: 2px solid var(--color-border); background: transparent; flex: 1;" id="ownership-mode-manual-label">\
-                  <input type="radio" name="ownership-mode" value="manual" id="ownership-mode-manual" style="accent-color: var(--color-accent-primary);">\
-                  <div>\
-                    <div style="font-size: 13px; font-weight: 500;">✏️ Manual Entry</div>\
-                    <div style="font-size: 11px; color: var(--color-text-muted);">Enter known ownership %</div>\
-                  </div>\
-                </label>\
-              </div>\
-              \
-              <!-- Auto-Calculate Section -->\
-              <div id="ownership-auto-section">\
-                <div class="form-row" style="margin-bottom: 0;">\
-                  <div class="form-group" style="margin-bottom: 12px;">\
-                    <label class="form-label">Pre-money Valuation (₹) <span style="color: #f59e0b;">★</span></label>\
-                    <input type="number" class="form-input" id="followon-premoney" min="0" step="1" placeholder="Required for calculation">\
-                  </div>\
-                  <div class="form-group" style="display: flex; align-items: flex-end; margin-bottom: 12px;">\
-                    <button type="button" class="btn btn-primary" id="calc-ownership-btn" style="width: 100%; height: 42px;">🧮 Calculate Ownership</button>\
-                  </div>\
-                </div>\
-                <div id="ownership-breakdown" style="display: none; padding: 12px; background: var(--color-bg-tertiary); border-radius: var(--radius-md); margin-bottom: 12px; font-size: 13px;">\
-                </div>\
-                <div class="form-group" style="margin-bottom: 0;">\
-                  <label class="form-label">Calculated Ownership (%)</label>\
-                  <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001" placeholder="Click Calculate" readonly style="background: var(--color-bg-tertiary); cursor: not-allowed;">\
-                </div>\
-              </div>\
-              \
-              <!-- Manual Entry Section (hidden by default) -->\
-              <div id="ownership-manual-section" style="display: none;">\
-                <div class="form-group" style="margin-bottom: 0;">\
-                  <label class="form-label">Ownership After Round (%) <span style="color: #f59e0b;">★</span></label>\
-                  <input type="number" class="form-input" id="followon-ownership-manual" min="0" max="100" step="0.001" placeholder="Enter ownership from records">\
-                  <div class="text-xs text-muted" style="margin-top: 6px;">💡 Use this for historical data when you know the final ownership</div>\
-                </div>\
+            <!-- Ownership After Round -->\
+            <div class="form-row">\
+              <div class="form-group">\
+                <label class="form-label">Ownership After Round (%)</label>\
+                <input type="number" class="form-input" id="followon-ownership" min="0" max="100" step="0.001" placeholder="Your stake after this round">\
               </div>\
             </div>\
             \
@@ -708,8 +678,11 @@ FamilyOffice.Components = (function () {
       }
     });
 
-    // Calculate Latest Valuation = Post-money from most recent round, or initial valuation
-    var latestValuation = company.initialValuation || company.entryValuation || company.latestValuation || 0;
+    // Entry Valuation = stored entryValuation or fallback
+    var entryValuation = company.entryValuation || company.initialValuation || 0;
+
+    // Calculate Latest Valuation = Post-money from most recent round, or stored latestValuation, or entry valuation
+    var latestValuation = company.latestValuation || entryValuation || 0;
     if (followOns.length > 0) {
       // Sort by date and get the latest
       var sortedRounds = followOns.slice().sort(function (a, b) {
@@ -730,29 +703,20 @@ FamilyOffice.Components = (function () {
           '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">✓ Invested</span>' :
           '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">✗ Passed</span>';
 
-        // Build dilution breakdown
-        var dilutionBreakdown = '';
-        if (roundData.dilutionFactor > 0) {
-          var dilutionPct = (roundData.dilutionFactor * 100).toFixed(2);
-          var prevOwn = roundData.previousOwnership.toFixed(2);
-          var dilutedOwn = roundData.dilutedOwnership.toFixed(2);
+        // Build ownership change display
+        var ownershipChange = '';
+        var prevOwn = roundData.previousOwnership.toFixed(2);
+        var finalOwn = roundData.finalOwnership.toFixed(2);
 
-          dilutionBreakdown = '<div style="font-size: 11px; margin-top: 6px; padding: 6px 8px; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">';
+        if (roundData.previousOwnership !== roundData.finalOwnership) {
+          var changeAmt = roundData.finalOwnership - roundData.previousOwnership;
+          var changeColor = changeAmt >= 0 ? '#10b981' : '#ef4444';
+          var changeSign = changeAmt >= 0 ? '+' : '';
 
-          if (roundData.isPassiveDilution) {
-            // Passive dilution only
-            dilutionBreakdown += '<div style="color: var(--color-text-muted);">📉 Passive Dilution</div>' +
-              '<div>' + prevOwn + '% → <span style="color: #ef4444;">−' + dilutionPct + '%</span> → <strong>' + dilutedOwn + '%</strong></div>';
-          } else {
-            // Dilution + new stake
-            var newStake = roundData.newStakeBought.toFixed(2);
-            var finalOwn = roundData.finalOwnership.toFixed(2);
-            dilutionBreakdown += '<div style="color: var(--color-text-muted);">📊 Ownership Change</div>' +
-              '<div>Diluted: ' + prevOwn + '% × (1−' + dilutionPct + '%) = ' + dilutedOwn + '%</div>' +
-              '<div>+ New stake: <span style="color: #10b981;">+' + newStake + '%</span></div>' +
-              '<div style="font-weight: 600; color: var(--color-accent-tertiary);">= ' + finalOwn + '%</div>';
-          }
-          dilutionBreakdown += '</div>';
+          ownershipChange = '<div style="font-size: 11px; margin-top: 6px; padding: 6px 8px; background: var(--color-bg-secondary); border-radius: var(--radius-sm);">' +
+            '<div style="color: var(--color-text-muted);">📊 Ownership</div>' +
+            '<div>' + prevOwn + '% → <span style="color: ' + changeColor + ';">' + changeSign + changeAmt.toFixed(2) + '%</span> → <strong>' + finalOwn + '%</strong></div>' +
+            '</div>';
         }
 
         var detailsHtml = '';
@@ -776,7 +740,7 @@ FamilyOffice.Components = (function () {
               <div>' + detailsHtml + '</div>\
               ' + (didInvest && investmentAmount > 0 ? '<div style="text-align: right;"><div class="text-xs text-muted">Our Investment</div><span style="color: var(--color-accent-tertiary); font-weight: 600;">' + Utils.formatCurrency(investmentAmount) + '</span></div>' : '') + '\
             </div>\
-            ' + dilutionBreakdown + '\
+            ' + ownershipChange + '\
           </div>';
       }).join('');
 
@@ -839,6 +803,8 @@ FamilyOffice.Components = (function () {
             <div class="flex justify-between mb-2"><span class="text-muted">Entry Date</span><span>' + Utils.formatDate(company.entryDate) + '</span></div>\
             <div class="flex justify-between mb-2"><span class="text-muted">Entry Stage</span><span>' + company.entryStage + '</span></div>\
             <div class="flex justify-between mb-2"><span class="text-muted">Initial Investment</span><span>' + Utils.formatCurrency(company.initialInvestment) + '</span></div>\
+            ' + (entryValuation > 0 ? '<div class="flex justify-between mb-2"><span class="text-muted">Entry Valuation</span><span>' + Utils.formatCurrency(entryValuation) + '</span></div>' : '') + '\
+            ' + (company.entryOwnership > 0 ? '<div class="flex justify-between mb-2"><span class="text-muted">Entry Ownership</span><span>' + company.entryOwnership.toFixed(2) + '%</span></div>' : '') + '\
             <div class="flex justify-between mb-2"><span class="text-muted">Last Investment</span><span>' + Utils.formatDate(company.lastInvestmentDate) + '</span></div>\
             ' + (company.status === 'Exited' ? '<div class="flex justify-between"><span class="text-muted">Exit Value</span><span style="color: var(--color-success);">' + Utils.formatCurrency(company.exitValue) + '</span></div>' : '') + '\
           </div>\
@@ -1297,7 +1263,10 @@ FamilyOffice.Components = (function () {
           <p class="settings-description">Export your data for backup, import from a previous export, or reset to default sample data.</p>\
           <div class="settings-actions">\
             <button class="btn btn-secondary" id="export-data-btn">\
-              <span class="btn-icon">📤</span> Export Data\
+              <span class="btn-icon">📤</span> Export JSON\
+            </button>\
+            <button class="btn btn-secondary" id="export-excel-btn">\
+              <span class="btn-icon">📊</span> Export Excel\
             </button>\
             <button class="btn btn-secondary" id="import-data-btn">\
               <span class="btn-icon">📥</span> Import Data\

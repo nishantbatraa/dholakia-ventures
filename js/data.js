@@ -727,7 +727,9 @@ FamilyOffice.Data = (function () {
     var newCompany = Object.assign({}, company, {
       id: uniqueId,
       followOns: company.followOns || [],
-      totalInvested: company.initialInvestment + (company.followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0)
+      totalInvested: company.initialInvestment + (company.followOns || []).reduce(function (sum, f) {
+        return sum + (f.didWeInvest ? (f.ourInvestment || f.amount || 0) : 0);
+      }, 0)
     });
 
     // Cloud-first: save to Supabase, then cache locally
@@ -758,7 +760,9 @@ FamilyOffice.Data = (function () {
         if (updates.initialInvestment || updates.followOns) {
           updatedCompany.totalInvested =
             updatedCompany.initialInvestment +
-            (updatedCompany.followOns || []).reduce(function (sum, f) { return sum + f.amount; }, 0);
+            (updatedCompany.followOns || []).reduce(function (sum, f) {
+              return sum + (f.didWeInvest ? (f.ourInvestment || f.amount || 0) : 0);
+            }, 0);
         }
         break;
       }

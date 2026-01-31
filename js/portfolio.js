@@ -668,63 +668,30 @@ FamilyOffice.Portfolio = (function () {
                 }
             }
 
-            // Ownership mode toggle
-            if (e.target.name === 'ownership-mode') {
-                var autoSection = document.getElementById('ownership-auto-section');
-                var manualSection = document.getElementById('ownership-manual-section');
-                var autoLabel = document.getElementById('ownership-mode-auto-label');
-                var manualLabel = document.getElementById('ownership-mode-manual-label');
-
-                if (e.target.value === 'auto') {
-                    autoSection.style.display = 'block';
-                    manualSection.style.display = 'none';
-                    if (autoLabel) {
-                        autoLabel.style.border = '2px solid var(--color-accent-primary)';
-                        autoLabel.style.background = 'rgba(139, 92, 246, 0.15)';
-                    }
-                    if (manualLabel) {
-                        manualLabel.style.border = '2px solid var(--color-border)';
-                        manualLabel.style.background = 'transparent';
-                    }
-                } else {
-                    autoSection.style.display = 'none';
-                    manualSection.style.display = 'block';
-                    if (autoLabel) {
-                        autoLabel.style.border = '2px solid var(--color-border)';
-                        autoLabel.style.background = 'transparent';
-                    }
-                    if (manualLabel) {
-                        manualLabel.style.border = '2px solid var(--color-accent-primary)';
-                        manualLabel.style.background = 'rgba(139, 92, 246, 0.15)';
-                    }
-                }
-            }
-
-            // Calculate Ownership button
-            if (e.target.id === 'calc-ownership-btn') {
-                calculateOwnershipAfterRound();
-            }
-
             // Follow-on Rounds - Save new follow-on (or update existing)
             if (e.target.id === 'save-followon-btn') {
-                var date = document.getElementById('followon-date').value;
-                var round = document.getElementById('followon-round').value;
-                var didWeInvest = document.getElementById('followon-invested').value === 'true';
-                var ourInvestment = parseFloat(document.getElementById('followon-our-investment').value) || 0;
-                var totalRaised = parseFloat(document.getElementById('followon-total-raised').value) || 0;
-
-                // Check which mode is selected
-                var isAutoMode = document.getElementById('ownership-mode-auto').checked;
-                var preMoneyValuation = 0;
-                var ownershipAfter = 0;
-
-                if (isAutoMode) {
-                    preMoneyValuation = parseFloat(document.getElementById('followon-premoney').value) || 0;
-                    ownershipAfter = parseFloat(document.getElementById('followon-ownership').value) || 0;
-                } else {
-                    ownershipAfter = parseFloat(document.getElementById('followon-ownership-manual').value) || 0;
+                // Use form context to ensure we get the right elements
+                var form = document.getElementById('add-followon-form');
+                if (!form) {
+                    console.error('Follow-on form not found');
+                    return;
                 }
-                var roundValuation = parseFloat(document.getElementById('followon-valuation').value) || 0;
+
+                var dateEl = form.querySelector('#followon-date');
+                var date = dateEl ? dateEl.value : '';
+                var roundEl = form.querySelector('#followon-round');
+                var round = roundEl ? roundEl.value : '';
+                var investedEl = form.querySelector('#followon-invested');
+                var didWeInvest = investedEl ? investedEl.value === 'true' : false;
+                var ourInvestmentEl = form.querySelector('#followon-our-investment');
+                var ourInvestment = parseFloat(ourInvestmentEl ? ourInvestmentEl.value : 0) || 0;
+                var totalRaisedEl = form.querySelector('#followon-total-raised');
+                var totalRaised = parseFloat(totalRaisedEl ? totalRaisedEl.value : 0) || 0;
+
+                var ownershipEl = form.querySelector('#followon-ownership');
+                var ownershipAfter = parseFloat(ownershipEl ? ownershipEl.value : 0) || 0;
+                var valuationEl = form.querySelector('#followon-valuation');
+                var roundValuation = parseFloat(valuationEl ? valuationEl.value : 0) || 0;
 
                 if (!date) {
                     alert('Please enter a round date');
@@ -737,7 +704,6 @@ FamilyOffice.Portfolio = (function () {
                     didWeInvest: didWeInvest,
                     ourInvestment: ourInvestment,
                     totalRaised: totalRaised,
-                    preMoneyValuation: preMoneyValuation,
                     roundValuation: roundValuation,
                     ownershipAfter: ownershipAfter
                 };
@@ -766,21 +732,8 @@ FamilyOffice.Portfolio = (function () {
                 document.getElementById('followon-date').value = '';
                 document.getElementById('followon-our-investment').value = '';
                 document.getElementById('followon-total-raised').value = '';
-                document.getElementById('followon-premoney').value = '';
                 document.getElementById('followon-valuation').value = '';
                 document.getElementById('followon-ownership').value = '';
-                var manualField = document.getElementById('followon-ownership-manual');
-                if (manualField) manualField.value = '';
-                var breakdownEl = document.getElementById('ownership-breakdown');
-                if (breakdownEl) breakdownEl.style.display = 'none';
-
-                // Reset mode to auto
-                var autoRadio = document.getElementById('ownership-mode-auto');
-                if (autoRadio) autoRadio.checked = true;
-                var autoSection = document.getElementById('ownership-auto-section');
-                var manualSection = document.getElementById('ownership-manual-section');
-                if (autoSection) autoSection.style.display = 'block';
-                if (manualSection) manualSection.style.display = 'none';
 
                 // Reset button text and form title
                 var saveBtn = document.getElementById('save-followon-btn');
@@ -804,11 +757,8 @@ FamilyOffice.Portfolio = (function () {
                         document.getElementById('followon-invested').value = fo.didWeInvest !== false ? 'true' : 'false';
                         document.getElementById('followon-our-investment').value = fo.ourInvestment || fo.amount || '';
                         document.getElementById('followon-total-raised').value = fo.totalRaised || '';
-                        document.getElementById('followon-premoney').value = fo.preMoneyValuation || '';
                         document.getElementById('followon-valuation').value = fo.roundValuation || '';
                         document.getElementById('followon-ownership').value = fo.ownershipAfter || '';
-                        var breakdownEl = document.getElementById('ownership-breakdown');
-                        if (breakdownEl) breakdownEl.style.display = 'none';
 
                         // Store edit index for save
                         window.editFollowOnIndex = index;
@@ -853,133 +803,6 @@ FamilyOffice.Portfolio = (function () {
         var manageModal = document.createElement('div');
         manageModal.innerHTML = Components.renderManageOptionsModal(type, items, isCustomFn, title);
         modalContainer.appendChild(manageModal.firstElementChild);
-    }
-
-    // Calculate ownership after a follow-on round including dilution
-    function calculateOwnershipAfterRound() {
-        var preMoneyEl = document.getElementById('followon-premoney');
-        var totalRaisedEl = document.getElementById('followon-total-raised');
-        var postMoneyEl = document.getElementById('followon-valuation');
-        var ownershipEl = document.getElementById('followon-ownership');
-        var ourInvestmentEl = document.getElementById('followon-our-investment');
-        var didWeInvestEl = document.getElementById('followon-invested');
-        var breakdownEl = document.getElementById('ownership-breakdown');
-
-        var preMoney = parseFloat(preMoneyEl.value) || 0;
-        var totalRaised = parseFloat(totalRaisedEl.value) || 0;
-        var ourInvestment = parseFloat(ourInvestmentEl.value) || 0;
-        var didWeInvest = didWeInvestEl.value === 'true';
-
-        if (preMoney <= 0 || totalRaised <= 0) {
-            alert('Please enter Pre-money Valuation and Total Round Raised first');
-            return;
-        }
-
-        // Calculate post-money
-        var postMoney = preMoney + totalRaised;
-        postMoneyEl.value = postMoney;
-
-        // Get previous ownership (from company's current ownership or last follow-on round)
-        var previousOwnership = 0;
-        var ownershipSource = '';
-
-        // If editing, get ownership before this round
-        if (window.editFollowOnIndex !== undefined && window.editFollowOnIndex > 0) {
-            // Get ownership from the previous round
-            previousOwnership = window.tempFollowOns[window.editFollowOnIndex - 1].ownershipAfter || 0;
-            ownershipSource = 'previous round';
-        } else if (window.editFollowOnIndex === 0) {
-            // First round - get from company's initial ownership 
-            var ownershipInput = document.querySelector('[name="ownership"]');
-            if (ownershipInput) {
-                previousOwnership = parseFloat(ownershipInput.value) || 0;
-            }
-            ownershipSource = 'initial ownership';
-        } else if (window.tempFollowOns && window.tempFollowOns.length > 0) {
-            // Adding new round - get from last existing round
-            previousOwnership = window.tempFollowOns[window.tempFollowOns.length - 1].ownershipAfter || 0;
-            ownershipSource = 'last round';
-        } else {
-            // First follow-on - get from company's current ownership in form
-            var ownershipInput = document.querySelector('[name="ownership"]');
-            if (ownershipInput) {
-                previousOwnership = parseFloat(ownershipInput.value) || 0;
-            }
-            ownershipSource = 'company ownership';
-        }
-
-        // Calculate dilution using standard VC formula
-        // Dilution Factor = Total New Capital / Post-Money
-        var roundDilution = totalRaised / postMoney;
-        // Diluted Stake = Old % × (1 - Dilution Factor)
-        var dilutedOwnership = previousOwnership * (1 - roundDilution);
-
-        // Calculate new shares purchased (if we invested)
-        // New Stake = Our Investment / Post-Money
-        var newSharesPct = 0;
-        if (didWeInvest && ourInvestment > 0) {
-            newSharesPct = (ourInvestment / postMoney) * 100;
-        }
-
-        // Final ownership = Diluted Stake + New Stake
-        var finalOwnership = dilutedOwnership + newSharesPct;
-        ownershipEl.value = finalOwnership.toFixed(3);
-
-        // Show clean table breakdown matching the reference format
-        var dilutionPct = (roundDilution * 100).toFixed(2);
-        var dilutionMultiplier = (1 - roundDilution).toFixed(4);
-
-        var breakdownHtml = '<div style="color: var(--color-text-secondary);">' +
-            '<div style="margin-bottom: 12px; font-weight: 600; font-size: 14px;">📊 Cap Table Calculation</div>' +
-            '<table style="width: 100%; font-size: 13px; border-collapse: collapse;">' +
-            '<tbody>' +
-
-            // Previous Holding
-            '<tr style="border-bottom: 1px solid var(--color-border);">' +
-            '<td style="padding: 8px 0; color: var(--color-text-muted);">Previous Holding</td>' +
-            '<td style="padding: 8px 0; text-align: right; font-weight: 500;">' + previousOwnership.toFixed(2) + '%</td>' +
-            '</tr>' +
-
-            // New Round Dilution
-            '<tr style="border-bottom: 1px solid var(--color-border);">' +
-            '<td style="padding: 8px 0; color: var(--color-text-muted);">New Round Dilution</td>' +
-            '<td style="padding: 8px 0; text-align: right; font-weight: 500; color: #ef4444;">' + dilutionPct + '%</td>' +
-            '</tr>' +
-
-            // Diluted Prev Stake
-            '<tr style="border-bottom: 1px solid var(--color-border);">' +
-            '<td style="padding: 8px 0; color: var(--color-text-muted);">Diluted Prev. Stake</td>' +
-            '<td style="padding: 8px 0; text-align: right;">' +
-            '<span style="font-weight: 500;">' + dilutedOwnership.toFixed(2) + '%</span>' +
-            ' <span class="text-xs text-muted">(' + previousOwnership.toFixed(2) + ' × ' + dilutionMultiplier + ')</span>' +
-            '</td>' +
-            '</tr>' +
-
-            // New Stake Bought
-            '<tr style="border-bottom: 1px solid var(--color-border);">' +
-            '<td style="padding: 8px 0; color: var(--color-text-muted);">New Stake Bought</td>' +
-            '<td style="padding: 8px 0; text-align: right;">';
-
-        if (didWeInvest && ourInvestment > 0) {
-            breakdownHtml += '<span style="font-weight: 500; color: #10b981;">' + newSharesPct.toFixed(2) + '%</span>' +
-                ' <span class="text-xs text-muted">(' + Utils.formatCurrency(ourInvestment) + ' / ' + Utils.formatCurrency(postMoney) + ')</span>';
-        } else {
-            breakdownHtml += '<span style="color: var(--color-text-muted);">0%</span>';
-        }
-
-        breakdownHtml += '</td></tr>' +
-
-            // Total Current Holding (highlighted)
-            '<tr style="background: rgba(139, 92, 246, 0.1);">' +
-            '<td style="padding: 12px 8px; font-weight: 600;">Total Current Holding</td>' +
-            '<td style="padding: 12px 8px; text-align: right; font-weight: 700; font-size: 1.1rem; color: var(--color-accent-tertiary);">' + finalOwnership.toFixed(2) + '%</td>' +
-            '</tr>' +
-
-            '</tbody></table>' +
-            '</div>';
-
-        breakdownEl.innerHTML = breakdownHtml;
-        breakdownEl.style.display = 'block';
     }
 
     // Helper to refresh modal form while preserving entered values
@@ -1119,6 +942,8 @@ FamilyOffice.Portfolio = (function () {
             entryStage: getValue('entryStage'),
             currentStage: getValue('currentStage') || getValue('entryStage'),
             initialInvestment: parseFloat(getValue('initialInvestment')) || 0,
+            entryValuation: parseFloat(getValue('entryValuation')) || 0,
+            entryOwnership: parseFloat(getValue('entryOwnership')) || 0,
             latestValuation: parseFloat(getValue('latestValuation')) || 0,
             ownership: parseFloat(getValue('ownership')) || 0,
             status: getValue('status') || 'Active',

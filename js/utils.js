@@ -379,12 +379,14 @@ FamilyOffice.Utils = (function () {
             var ownershipHistory = calculateOwnershipHistory(company);
             var currentOwnership = ownershipHistory.currentOwnership || company.ownership || 0;
 
-            // Get the latest valuation: check follow-ons for most recent roundValuation
+            // Get the latest valuation: use most recent follow-on by DATE (not highest value)
             var latestValuation = company.latestValuation || 0;
+            var latestValuationDate = '';
             if (company.followOns && company.followOns.length > 0) {
                 company.followOns.forEach(function (fo) {
-                    if (fo.roundValuation && fo.roundValuation > latestValuation) {
+                    if (fo.roundValuation && fo.date && fo.date > latestValuationDate) {
                         latestValuation = fo.roundValuation;
+                        latestValuationDate = fo.date;
                     }
                 });
             }
@@ -462,8 +464,11 @@ FamilyOffice.Utils = (function () {
 
         if (initialValuation > 0 && initialInvestment > 0) {
             result.initialOwnership = (initialInvestment / initialValuation) * 100;
+        } else if (company.entryOwnership) {
+            // Fallback to stored entry ownership if no valuation data for calculation
+            result.initialOwnership = company.entryOwnership;
         } else if (company.ownership) {
-            // Fallback to stored ownership if no valuation data
+            // Last resort: fallback to current ownership
             result.initialOwnership = company.ownership;
         }
 
@@ -483,41 +488,12 @@ FamilyOffice.Utils = (function () {
                 date: round.date,
                 roundName: round.round,
                 previousOwnership: currentOwnership,
-                dilutionFactor: 0,
-                dilutedOwnership: currentOwnership,
-                newStakeBought: 0,
-                finalOwnership: currentOwnership,
+                finalOwnership: round.ownershipAfter || currentOwnership,
                 didWeInvest: round.didWeInvest,
                 ourInvestment: round.ourInvestment || 0,
                 totalRaised: round.totalRaised || 0,
-                postMoney: round.roundValuation || 0,
-                isPassiveDilution: true
+                postMoney: round.roundValuation || 0
             };
-
-            // Calculate dilution if we have the data
-            var totalRaised = round.totalRaised || 0;
-            var postMoney = round.roundValuation || 0;
-
-            if (postMoney > 0 && totalRaised > 0) {
-                // A. Calculate Dilution Factor
-                roundBreakdown.dilutionFactor = totalRaised / postMoney;
-
-                // B. Calculate Diluted Base (Passive Dilution)
-                roundBreakdown.dilutedOwnership = currentOwnership * (1 - roundBreakdown.dilutionFactor);
-
-                // C. Handle Re-investment
-                if (round.didWeInvest && round.ourInvestment > 0) {
-                    roundBreakdown.newStakeBought = (round.ourInvestment / postMoney) * 100;
-                    roundBreakdown.isPassiveDilution = false;
-                }
-
-                // D. Calculate Final Ownership
-                roundBreakdown.finalOwnership = roundBreakdown.dilutedOwnership + roundBreakdown.newStakeBought;
-            } else if (round.ownershipAfter !== undefined && round.ownershipAfter > 0) {
-                // Fallback: Use stored ownership if calculation data is missing
-                roundBreakdown.finalOwnership = round.ownershipAfter;
-                roundBreakdown.dilutedOwnership = round.ownershipAfter; // Approximate
-            }
 
             // Update current ownership for next round
             currentOwnership = roundBreakdown.finalOwnership;
@@ -543,17 +519,19 @@ FamilyOffice.Utils = (function () {
 
     /**
      * Get the latest valuation for a company
-     * Checks follow-on rounds for higher valuations
+     * Uses most recent follow-on round by DATE (handles down rounds correctly)
      *
      * @param {Object} company - Company object
      * @returns {number} Latest valuation
      */
     function getLatestValuation(company) {
         var latestValuation = company.latestValuation || 0;
+        var latestDate = '';
         if (company.followOns && company.followOns.length > 0) {
             company.followOns.forEach(function (fo) {
-                if (fo.roundValuation && fo.roundValuation > latestValuation) {
+                if (fo.roundValuation && fo.date && fo.date > latestDate) {
                     latestValuation = fo.roundValuation;
+                    latestDate = fo.date;
                 }
             });
         }

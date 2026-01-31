@@ -62,6 +62,9 @@ FamilyOffice.Settings = (function () {
             if (e.target.id === 'export-data-btn') {
                 exportData();
             }
+            if (e.target.id === 'export-excel-btn') {
+                exportToExcel();
+            }
             if (e.target.id === 'import-data-btn') {
                 document.getElementById('import-file-input').click();
             }
@@ -241,6 +244,84 @@ FamilyOffice.Settings = (function () {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         showNotification('Data exported successfully!', 'success');
+    }
+
+    function exportToExcel() {
+        var companies = Data.getCompanies();
+
+        // CSV headers
+        var headers = [
+            'Name', 'Industry', 'HQ', 'Deal Sourcer', 'Analyst',
+            'Entry Date', 'Entry Stage', 'Current Stage', 'Status',
+            'Initial Investment', 'Total Invested', 'Entry Valuation', 'Entry Ownership %',
+            'Latest Valuation', 'Current Ownership %', 'Share Type',
+            'Exit Date', 'Exit Value', 'Notes',
+            'Follow-on Count', 'Follow-on Rounds'
+        ];
+
+        // Build CSV rows
+        var rows = companies.map(function(c) {
+            // Calculate current values
+            var currentOwnership = Utils.getCurrentOwnership(c);
+            var latestValuation = Utils.getLatestValuation(c);
+
+            // Format follow-on rounds as text
+            var followOnText = '';
+            if (c.followOns && c.followOns.length > 0) {
+                followOnText = c.followOns.map(function(fo) {
+                    return fo.date + ' ' + fo.round + ' Val:' + (fo.roundValuation || 0) + ' Own:' + (fo.ownershipAfter || 0) + '%';
+                }).join(' | ');
+            }
+
+            return [
+                escapeCsvField(c.name || ''),
+                escapeCsvField(c.industry || ''),
+                escapeCsvField(c.hq || ''),
+                escapeCsvField(c.dealSourcer || ''),
+                escapeCsvField(c.analyst || ''),
+                c.entryDate || '',
+                escapeCsvField(c.entryStage || ''),
+                escapeCsvField(c.currentStage || ''),
+                escapeCsvField(c.status || 'Active'),
+                c.initialInvestment || 0,
+                c.totalInvested || c.initialInvestment || 0,
+                c.entryValuation || 0,
+                c.entryOwnership || 0,
+                latestValuation || 0,
+                currentOwnership.toFixed(3),
+                c.shareType || 'primary',
+                c.exitDate || '',
+                c.exitValue || '',
+                escapeCsvField(c.notes || ''),
+                c.followOns ? c.followOns.length : 0,
+                escapeCsvField(followOnText)
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        var csv = headers.join(',') + '\n' + rows.join('\n');
+
+        // Download as CSV (Excel compatible)
+        var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'portfolio_export_' + new Date().toISOString().split('T')[0] + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showNotification('Excel export successful! (' + companies.length + ' companies)', 'success');
+    }
+
+    function escapeCsvField(value) {
+        if (value === null || value === undefined) return '';
+        var str = String(value);
+        // Escape quotes and wrap in quotes if contains comma, quote, or newline
+        if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
     }
 
     function resetData() {
