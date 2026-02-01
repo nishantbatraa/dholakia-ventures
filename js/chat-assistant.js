@@ -249,11 +249,12 @@ ${companies.map(function(c) {
                 return response.json();
             })
             .then(function(data) {
-                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    var text = data.candidates[0].content.parts[0].text;
+                if (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+                    var text = data.candidates[0].content.parts[0].text || '';
                     resolve(text);
                 } else {
-                    reject(new Error('Invalid response from AI'));
+                    console.error('[Chat Assistant] Invalid API response:', data);
+                    reject(new Error('Invalid response from AI. Please try again.'));
                 }
             })
             .catch(function(error) {
@@ -343,8 +344,11 @@ ${companies.map(function(c) {
     }
 
     function formatMessage(content) {
+        // Handle undefined or null content
+        if (!content) return '';
+
         // Convert markdown-like formatting to HTML
-        return content
+        return String(content)
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -434,9 +438,10 @@ ${companies.map(function(c) {
             })
             .catch(function(error) {
                 console.error('Chat error:', error);
+                var errorMsg = error && error.message ? error.message : 'Unknown error occurred';
                 messages.push({
                     role: 'assistant',
-                    content: 'Sorry, I encountered an error: ' + error.message + '\n\nPlease try again or check if the API key is configured correctly in Settings.'
+                    content: 'Sorry, I encountered an error: ' + errorMsg + '\n\nPlease try again or check if the API key is configured correctly in Settings.'
                 });
                 isLoading = false;
                 render();
